@@ -53,7 +53,7 @@
             --link-hover-color: #0056b3;
             --refresh-btn-bg: #28a745;
             --refresh-btn-hover: #218838;
-            /* YENİ EKLENDİ / GÜNCELLEDİ */
+            /* YENİ EKLENDİ / GÜNCELLENDİ */
             --light-button-bg: #ffffff; /* Buton arka planı beyaz */
             --light-button-text: #333;  /* Buton yazısı siyah */
             --light-button-border: #cccccc; /* Buton kenarlığı hafif gri */
@@ -647,7 +647,6 @@
         const WS_TIMEOUT_MS = 5000; // WebSocket bağlantı/mesaj zaman aşımı (5 saniye)
 
         // Tüm kullanıcı verilerini saklayacak global bir dizi
-        // Bu, filtreleme ve sıralama yaparken DOM'u sürekli değiştirmemizi engeller
         let allUsersData = [];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -678,28 +677,80 @@
             return matches ? matches[1] : null;
         }
 
-        // addPlayers artık sadece veriyi allUsersData'ya ekleyecek, DOM'u filtreUsers güncelleyecek
+        function renderUsers(usersToRender) {
+            const usersContainer = f("#usersContainer");
+            usersContainer.innerHTML = ""; // Mevcut tüm kullanıcıları temizle
+
+            let visibleCount = 0;
+            usersToRender.forEach(user => {
+                const foto = user.foto || `https://gartic.io/static/images/avatar/svg/${user.avatar}.svg`;
+                const uclass = user.foto ? "havefoto" : "nofoto";
+                const isDiscordUser = foto.includes("cdn.discordapp.com");
+                const discordClass = isDiscordUser ? "discord" : "";
+                const discordID = isDiscordUser ? extractDiscordID(foto) : null;
+
+                const discordProfileButtonHTML = discordID 
+                    ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
+                    : '';
+
+                const isFavorited = favoriteUsers.includes(user.id);
+
+                // Kullanıcı HTML'ini oluştur
+                const userHTML = `
+                    <div class="user ${uclass} ${discordClass}" id="user-${user.id}" data-user-id="${user.id}">
+                        <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${user.id})">
+                            <i class="${isFavorited ? 'fas' : 'far'} fa-star"></i>
+                        </button>
+                        <img src="${foto}" alt="${user.nick}'ın fotoğrafı">
+                        <div class="user-details">
+                            <b>${user.nick}</b><br>
+                            <i>${user.pontos} pt</i><br>
+                            <a href="https://gartic.io/${user.roomlink}" target="_blank" rel="noopener noreferrer" class="room-link">${user.roomlink}</a>
+                            &nbsp;|&nbsp;
+                            <a href="https://gartic.io/${user.roomlink}/viewer" target="_blank" rel="noopener noreferrer" class="room-link">${user.roomlink} izle</a><br>
+                            <div class="action-buttons">
+                                <button class="view-photo-btn" onclick="viewPhoto('${foto}')">Fotoğrafı Görüntüle</button>
+                                ${discordProfileButtonHTML}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                usersContainer.innerHTML += userHTML;
+                visibleCount++; // Bu kısım aslında render edilen tüm kullanıcıları sayar
+            });
+            updatePlayerCount(visibleCount); // Sadece filtrelenmiş kullanıcıları saydırmak için `filterUsers` çağırılacak.
+        }
+
         function addPlayers(users, roomlink) {
             users.forEach(user => {
-                // Kullanıcı zaten listede yoksa ekle (id kontrolü)
+                // Sadece daha önce eklenmemiş kullanıcıları ekle
                 if (!allUsersData.some(existingUser => existingUser.id === user.id)) {
-                    const foto = user.foto || `https://gartic.io/static/images/avatar/svg/${user.avatar}.svg`;
-                    const isDiscordUser = foto.includes("cdn.discordapp.com");
-                    
-                    allUsersData.push({
-                        id: user.id,
-                        nick: user.nick,
-                        pontos: user.pontos,
-                        foto: foto,
-                        roomlink: roomlink,
-                        isDiscordUser: isDiscordUser
-                    });
-                    totalPlayerCount++;
+                    allUsersData.push({ ...user, roomlink: roomlink });
                 }
             });
-            updateTotalPlayerCount(totalPlayerCount);
-            // filterUsers burada çağrılmayacak, en sonda bir kere çağıracağız.
-            // Bu daha performanslı olacaktır.
+            // Kullanıcı verileri eklendikten sonra listeyi yeniden sırala ve render et
+            sortAndRenderUsers();
+            updateTotalPlayerCount(allUsersData.length); // Toplam bulunan kullanıcı sayısını güncelle
+        }
+
+        function sortAndRenderUsers() {
+            // Favori olmayan kullanıcılar
+            let nonFavoritedUsers = allUsersData.filter(user => !favoriteUsers.includes(user.id));
+            
+            // Favori kullanıcılar
+            let favoritedUsers = allUsersData.filter(user => favoriteUsers.includes(user.id));
+
+            // Favori kullanıcıları id listesindeki sıraya göre sırala (bu kısmı opsiyonel, manuel sıra için)
+            favoritedUsers.sort((a, b) => favoriteUsers.indexOf(a.id) - favoriteUsers.indexOf(b.id));
+
+            // Favori olmayan kullanıcıları puana göre (veya başka bir kritere göre) sıralayabiliriz
+            nonFavoritedUsers.sort((a, b) => b.pontos - a.pontos); // Örneğin, puana göre azalan
+
+            // Favori kullanıcıları en başa koy, sonra favori olmayanları ekle
+            const sortedUsers = [...favoritedUsers, ...nonFavoritedUsers];
+
+            renderUsers(sortedUsers); // Sıralanmış listeyi render et
+            filterUsers(); // Filtreleri tekrar uygula (arama çubuğu vb.)
         }
 
         function viewPhoto(photoURL) {
@@ -746,9 +797,7 @@
         }
 
         function filterUsers() {
-            const usersContainer = f("#usersContainer");
-            usersContainer.innerHTML = ''; // Container'ı temizle
-            
+            const users = fa(".user");
             const searchInput = f("#searchInput").value.toLowerCase();
             const havefotoCheckbox = f("#havefotoCheckbox");
             const nofotoCheckbox = f("#nofotoCheckbox");
@@ -759,14 +808,13 @@
             discordCheckbox.disabled = havefotoCheckbox.checked || nofotoCheckbox.checked;
 
             let shouldShowAnyFilter = havefotoCheckbox.checked || nofotoCheckbox.checked || discordCheckbox.checked;
-            let visibleUsers = [];
+            let visibleCount = 0;
 
-            // Filtreleme yap
-            allUsersData.forEach(user => {
-                const userName = user.nick.toLowerCase();
-                const hasPhoto = user.foto && !user.foto.includes("static/images/avatar/svg/"); // Fotoğrafı olup olmadığını kontrol et
-                const noPhoto = !hasPhoto; // Fotoğrafı olmayanlar
-                const isDiscord = user.isDiscordUser;
+            users.forEach(userElement => { // userElement olarak değiştirdim, global user ile karışmasın
+                const userName = userElement.querySelector("b").textContent.toLowerCase();
+                const hasPhoto = userElement.classList.contains("havefoto");
+                const noPhoto = userElement.classList.contains("nofoto");
+                const isDiscord = userElement.classList.contains("discord");
 
                 let passesFilter = false;
                 if (!shouldShowAnyFilter) {
@@ -780,57 +828,18 @@
                 }
                 
                 if (userName.includes(searchInput) && passesFilter) {
-                    visibleUsers.push(user);
+                    userElement.style.display = "flex";
+                    visibleCount++;
+                } else {
+                    userElement.style.display = "none";
                 }
             });
 
-            // Favorileri başa sırala
-            visibleUsers.sort((a, b) => {
-                const aIsFavorited = favoriteUsers.includes(a.id);
-                const bIsFavorited = favoriteUsers.includes(b.id);
-
-                if (aIsFavorited && !bIsFavorited) return -1; // a favori ise başa
-                if (!aIsFavorited && bIsFavorited) return 1;  // b favori ise a sona
-                return 0; // Sıralamayı koru
-            });
-
-            // Görünür kullanıcıları DOM'a ekle
-            visibleUsers.forEach(user => {
-                const uclass = user.foto && !user.foto.includes("static/images/avatar/svg/") ? "havefoto" : "nofoto";
-                const discordClass = user.isDiscordUser ? "discord" : "";
-                const discordID = user.isDiscordUser ? extractDiscordID(user.foto) : null;
-                const isFavorited = favoriteUsers.includes(user.id);
-
-                const discordProfileButtonHTML = discordID 
-                    ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
-                    : '';
-
-                usersContainer.innerHTML += `
-                    <div class="user ${uclass} ${discordClass}" id="user-${user.id}">
-                        <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${user.id})">
-                            <i class="${isFavorited ? 'fas' : 'far'} fa-star"></i>
-                        </button>
-                        <img src="${user.foto}" alt="${user.nick}'ın fotoğrafı">
-                        <div class="user-details">
-                            <b>${user.nick}</b><br>
-                            <i>${user.pontos} pt</i><br>
-                            <a href="https://gartic.io/${user.roomlink}" target="_blank" rel="noopener noreferrer" class="room-link">${user.roomlink}</a>
-                            &nbsp;|&nbsp;
-                            <a href="https://gartic.io/${user.roomlink}/viewer" target="_blank" rel="noopener noreferrer" class="room-link">${user.roomlink} izle</a><br>
-                            <div class="action-buttons">
-                                <button class="view-photo-btn" onclick="viewPhoto('${user.foto}')">Fotoğrafı Görüntüle</button>
-                                ${discordProfileButtonHTML}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            updatePlayerCount(visibleUsers.length);
+            updatePlayerCount(visibleCount);
         }
 
         function searchUsers() {
-            filterUsers();
+            filterUsers(); // Arama yapıldığında sadece filtreyi tekrar uygula
         }
 
         // Yardımcı fonksiyon: Belirli bir gecikmeyle Promise döndürür
@@ -848,22 +857,20 @@
             const loadingIndicator = f("#loadingIndicator");
             const refreshButton = f("#refreshButton");
 
-            usersContainer.innerHTML = ""; // DOM'daki eski kullanıcıları temizle
-            allUsersData = []; // Tüm kullanıcı verilerini sıfırla
-            totalPlayerCount = 0; // Toplam sayıyı sıfırla
-
+            usersContainer.innerHTML = "";
+            allUsersData = []; // Yeni taramada tüm kullanıcı verilerini sıfırla
+            totalPlayerCount = 0;
             updateTotalPlayerCount(0);
             updatePlayerCount(0);
             f("#searchInput").value = "";
-            // Filtre checkbox'larını sıfırlama, kullanıcı seçimi kalsın
-            // f("#havefotoCheckbox").checked = false;
-            // f("#nofotoCheckbox").checked = false;
-            // f("#discordCheckbox").checked = false;
-            // filterUsers(); // Başlangıçta filtremeye gerek yok, en sonunda bir kere yapılacak
+            f("#havefotoCheckbox").checked = false;
+            f("#nofotoCheckbox").checked = false;
+            f("#discordCheckbox").checked = false;
+            filterUsers();
 
             loadingIndicator.style.display = 'block';
             refreshButton.disabled = true;
-            isProcessingRooms = true; 
+            isProcessingRooms = true; // İşlem başladı olarak işaretle
 
             try {
                 // Oda listesini çekme
@@ -903,14 +910,8 @@
 
                             ws.onmessage = (msg) => {
                                 if (msg.data.indexOf('42["5"') !== -1) {
-                                    // Veriyi parse ederken hata olmaması için dikkat et
-                                    try {
-                                        const usersData = JSON.parse('[{"id":' + msg.data.split('[{"id":')[1].split("}]")[0] + "}]");
-                                        addPlayers(usersData, room.code); // Veriyi allUsersData'ya ekle
-                                    } catch (e) {
-                                        console.warn(`[${room.code}] Kullanıcı verisi parse edilirken hata:`, e);
-                                    }
-                                    
+                                    const usersData = JSON.parse('[{"id":' + msg.data.split('[{"id":')[1].split("}]")[0] + "}]");
+                                    addPlayers(usersData, room.code); // Yeni kullanıcıları ekle ve listeyi yeniden render et
                                     clearTimeout(timeout);
                                     ws.close();
                                     wsResolved = true;
@@ -943,11 +944,9 @@
             } catch (error) {
                 console.error('Genel işlem sırasında hata oluştu (oda listesi veya döngü dışı):', error.message);
             } finally {
-                // Tüm odalar işlendikten sonra kullanıcıları filtrele ve sırala
-                filterUsers(); 
                 loadingIndicator.style.display = 'none';
                 refreshButton.disabled = false;
-                isProcessingRooms = false; 
+                isProcessingRooms = false; // İşlem bitti olarak işaretle
             }
         }
         
@@ -965,31 +964,20 @@
         }
 
         function toggleFavorite(userId) {
-            const userElement = f(`#user-${userId}`);
-            const favoriteBtn = userElement.querySelector('.favorite-btn');
-            const starIcon = favoriteBtn.querySelector('i');
-
             if (favoriteUsers.includes(userId)) {
                 favoriteUsers = favoriteUsers.filter(id => id !== userId);
-                favoriteBtn.classList.remove('favorited');
-                starIcon.classList.replace('fas', 'far');
             } else {
                 favoriteUsers.push(userId);
-                favoriteBtn.classList.add('favorited');
-                starIcon.classList.replace('far', 'fas');
             }
             localStorage.setItem('favoriteUsers', JSON.stringify(favoriteUsers));
-            
-            // Favori durumu değiştiğinde listeyi yeniden sırala ve göster
-            filterUsers();
+            sortAndRenderUsers(); // Favori durumu değiştiğinde listeyi yeniden sırala ve render et
         }
 
+        f('#themeToggle').addEventListener('click', toggleTheme);
         f('#refreshButton').addEventListener('click', () => {
-            isProcessingRooms = false; 
+            isProcessingRooms = false; // Önceki takılmayı temizle
             listusers(currentLanguage);
         });
-
-        f('#themeToggle').addEventListener('click', toggleTheme);
     </script>
 </body>
 </html>
