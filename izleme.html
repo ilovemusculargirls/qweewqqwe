@@ -381,6 +381,17 @@
             color: #ffeb3b;
         }
 
+        /* Devre dışı bırakılmış favori butonu için stil */
+        .favorite-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .favorite-btn.disabled:hover {
+            color: #ccc; /* Hover'da renk değişmesin */
+            transform: none; /* Hover'da büyümesin */
+        }
+
+
         .profile-container {
             display: none;
             position: fixed;
@@ -639,6 +650,7 @@
         const fa = (selector) => document.querySelectorAll(selector);
 
         let totalPlayerCount = 0;
+        // favoriteUsers dizisi artık hem sayısal hem de string ID'leri tutabilir
         let favoriteUsers = JSON.parse(localStorage.getItem('favoriteUsers')) || [];
         let currentLanguage = 8; // Varsayılan dil (Türkçe için 8)
         
@@ -692,21 +704,18 @@
                     ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
                     : '';
 
-                // user.id'nin geçerli bir sayı olduğundan emin olalım
-                // Eğer user.id tanımsız, null veya geçerli bir sayı değilse, favori butonu için tıklama olayını devre dışı bırak.
-                const isFavoritable = typeof user.id === 'number'; // user.id'nin number tipinde olduğunu kontrol et
-                const favoriteButtonHTML = isFavoritable
-                    ? `<button class="favorite-btn ${favoriteUsers.includes(user.id) ? 'favorited' : ''}" onclick="toggleFavorite(${user.id})">
-                          <i class="${favoriteUsers.includes(user.id) ? 'fas' : 'far'} fa-star"></i>
-                       </button>`
-                    : `<button class="favorite-btn disabled" disabled title="Bu kullanıcı favorilenemez">
-                          <i class="far fa-star"></i>
-                       </button>`; // Butonu devre dışı bırak ve stilini ayarla
+                // user.id'yi doğrudan HTML içine basarken string veya number olmasına göre tırnak ekleyelim
+                // Bu, SyntaxError'u çözecek
+                const userIdForHtml = typeof user.id === 'string' ? `'${user.id}'` : user.id;
+
+                const isFavorited = favoriteUsers.includes(user.id); // favoriteUsers.includes() string ve number ID'ler için doğru çalışır
 
                 // Kullanıcı HTML'ini oluştur
                 const userHTML = `
                     <div class="user ${uclass} ${discordClass}" id="user-${user.id}" data-user-id="${user.id}">
-                        ${favoriteButtonHTML}
+                        <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${userIdForHtml})">
+                            <i class="${isFavorited ? 'fas' : 'far'} fa-star"></i>
+                        </button>
                         <img src="${foto}" alt="${user.nick}'ın fotoğrafı">
                         <div class="user-details">
                             <b>${user.nick}</b><br>
@@ -728,12 +737,9 @@
 
         function addPlayers(users, roomlink) {
             users.forEach(user => {
-                // Sadece daha önce eklenmemiş ve geçerli bir ID'si olan kullanıcıları ekle
-                // user.id'nin sayı olduğundan emin olalım
-                if (typeof user.id === 'number' && !allUsersData.some(existingUser => existingUser.id === user.id)) {
+                // Herhangi bir ID tipini kabul et, sadece ID'nin boş olmadığından emin ol
+                if (user.id !== undefined && user.id !== null && user.id !== '' && !allUsersData.some(existingUser => existingUser.id === user.id)) {
                     allUsersData.push({ ...user, roomlink: roomlink });
-                } else if (typeof user.id !== 'number') {
-                    console.warn(`Geçersiz kullanıcı ID'si bulunan kullanıcı atlandı:`, user);
                 }
             });
             // Kullanıcı verileri eklendikten sonra listeyi yeniden sırala ve render et
@@ -742,44 +748,12 @@
         }
 
         function sortAndRenderUsers() {
-            // Favori olmayan kullanıcılar
-            let nonFavoritedUsers = allUsersData.filter(user => !favoriteUsers.includes(user.id));
-            
-            // Favori kullanıcılar
-            let favoritedUsers = allUsersData.filter(user => favoriteUsers.includes(user.id));
-
-            // Favori kullanıcıları id listesindeki sıraya göre sırala (bu kısmı opsiyonel, manuel sıra için)
-            favoritedUsers.sort((a, b) => favoriteUsers.indexOf(a.id) - favoriteUsers.indexOf(b.id));
-
-            // Favori olmayan kullanıcıları puana göre (veya başka bir kritere göre) sıralayabiliriz
-            // Yeni gelenler en sona eklenecekse, bu sıralamayı kaldırıp `nonFavoritedUsers`'ı olduğu gibi bırakabiliriz
-            // Veya sadece puanları aynı olanları eklenme sırasına göre sıralarız.
-            // Örneğin, puana göre azalan, eğer puanlar aynıysa eklenme sırasına göre (mevcut halleriyle)
-            nonFavoritedUsers.sort((a, b) => b.pontos - a.pontos); 
-            // Eğer yeni eklenenleri en alta atmak istiyorsak, sadece favorileri başa alırız:
-            // let sortedUsers = [...favoritedUsers, ...nonFavoritedUsers]; // Eski davranış buydu
-            
-            // Yeni eklenenleri en alta atmak için basitçe favorileri listeler, sonra diğerlerini olduğu gibi ekleriz.
-            // Bu, sıralamayı sadece favoriler için yapar, diğerlerini eklenme sırasına göre korur.
-            const sortedUsers = [];
-            
-            // Favori kullanıcıları ekle
-            sortedUsers.push(...favoritedUsers);
-
-            // Favori olmayan kullanıcıları (orijinal `allUsersData`'daki sıralarına göre) ekle
-            // Bu kısım biraz daha karmaşık olabilir, çünkü `allUsersData` zaten yeni eklenenleri sona atıyor.
-            // En basiti, favori olmayanları olduğu gibi eklemek, `sort` kullanmadan.
-            // Ancak, mevcut `nonFavoritedUsers.sort` hala puana göre sıralıyor.
-            // Eğer "yeni eklenenler en sona" kuralı mutlak ise, `nonFavoritedUsers`'ı sıralamamalıyız.
-            // Şu anki durumda `allUsersData`'ya ekleme sırası doğal olarak yeni gelenleri sona atar.
-            // Bu nedenle sadece favori olmayanları filtreleyip olduğu gibi eklemek yeterli.
-            
-            // Mevcut `allUsersData` dizisini orijinal eklenme sırasına göre korumak en mantıklısı.
-            // Tekrar baştan oluşturmak yerine:
             const finalSortedList = [];
             const favIds = new Set(favoriteUsers); // Set ile favori ID'lerine hızlı erişim
             
             // Favori kullanıcıları listeye ekle (favoriIds sırasına göre)
+            // favIds içinde olmayan ve allUsersData içinde olup favori olanlar (eski veriden kalma olabilir)
+            // bu döngüde yakalanır.
             favoriteUsers.forEach(favId => {
                 const user = allUsersData.find(u => u.id === favId);
                 if (user) {
@@ -788,8 +762,9 @@
             });
 
             // Favori olmayan kullanıcıları listeye ekle (orijinal allUsersData sırasına göre)
+            // Bu, yeni eklenenlerin sona gelmesini sağlar.
             allUsersData.forEach(user => {
-                if (!favIds.has(user.id)) {
+                if (!favIds.has(user.id)) { // Eğer favori listesinde değilse
                     finalSortedList.push(user);
                 }
             });
@@ -944,7 +919,7 @@
                             const timeout = setTimeout(() => {
                                 if (!wsResolved) {
                                     ws.close();
-                                    reject(new Error(`WebSocket bağlantısı veya veri alımı zaman aşımına uğradı (${WS_TIMEOUT_MS}ms) for room ${room.code}.`));
+                                    reject(new Error(`WebSocket bağlantısı veya veri alımı zaman aşımına uğradı (${WS_TIMEOUT_MS}ms) for room ${room.code}).`));
                                 }
                                 wsResolved = true; // Timeout durumunda da resolve/reject edilmiş sayılır.
                             }, WS_TIMEOUT_MS);
@@ -956,12 +931,22 @@
 
                             ws.onmessage = (msg) => {
                                 if (msg.data.indexOf('42["5"') !== -1) {
-                                    const usersData = JSON.parse('[{"id":' + msg.data.split('[{"id":')[1].split("}]")[0] + "}]");
-                                    addPlayers(usersData, room.code); // Yeni kullanıcıları ekle ve listeyi yeniden render et
-                                    clearTimeout(timeout);
-                                    ws.close();
-                                    wsResolved = true;
-                                    resolve();
+                                    // Parse edilen verinin doğru formatta olduğundan emin olalım
+                                    try {
+                                        const jsonPart = '[' + msg.data.split('[{"id":')[1].split("}]")[0] + "}]";
+                                        const usersData = JSON.parse(jsonPart);
+                                        addPlayers(usersData, room.code); // Yeni kullanıcıları ekle ve listeyi yeniden render et
+                                        clearTimeout(timeout);
+                                        ws.close();
+                                        wsResolved = true;
+                                        resolve();
+                                    } catch (parseError) {
+                                        console.error(`[${room.code}] WebSocket mesajı ayrıştırılırken hata oluştu:`, parseError);
+                                        clearTimeout(timeout);
+                                        ws.close();
+                                        wsResolved = true;
+                                        reject(new Error(`[${room.code}] Mesaj ayrıştırma hatası: ${parseError.message}`));
+                                    }
                                 }
                             };
 
@@ -1012,10 +997,11 @@
             }
         }
 
+        // userId artık her türlü (sayısal veya string) ID olabilir
         function toggleFavorite(userId) {
-            // userId'nin geçerli bir sayı olduğundan emin olalım
-            if (typeof userId !== 'number' || isNaN(userId)) {
-                console.error("Geçersiz kullanıcı ID'si, favorilere eklenemiyor:", userId);
+            // userId'nin boş veya tanımsız olmadığından emin olalım
+            if (userId === undefined || userId === null || userId === '') {
+                console.error("Geçersiz veya boş kullanıcı ID'si, favorilere eklenemiyor.");
                 return;
             }
 
