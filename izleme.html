@@ -812,8 +812,9 @@
         }
         
         async function listusers(lang) {
+            // isProcessingRooms bayrağını burada kontrol edip, butonun click handler'ında resetleyelim
             if (isProcessingRooms) {
-                console.log("Odalar zaten işleniyor, lütfen bekleyin.");
+                console.log("Odalar zaten işleniyor, yeni istek yok. Lütfen bekleyin veya yenile butonuna basın.");
                 return;
             }
 
@@ -833,13 +834,13 @@
 
             loadingIndicator.style.display = 'block';
             refreshButton.disabled = true;
-            isProcessingRooms = true;
+            isProcessingRooms = true; // İşlem başladı olarak işaretle
 
             try {
                 // Oda listesini çekme
                 const response = await fetch(`https://gartic.io/req/list?search=&language[]=${lang}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP hata kodu: ${response.status}`);
+                    throw new Error(`Oda listesi çekilemedi, HTTP hata kodu: ${response.status}`);
                 }
                 const rooms = await response.json();
 
@@ -849,7 +850,7 @@
                         // Oda verilerini çekme
                         const roomResponse = await fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`);
                         if (!roomResponse.ok) {
-                            throw new Error(`Oda verileri için HTTP hata kodu: ${roomResponse.status}`);
+                            throw new Error(`Oda ${room.code} için serverViewer verisi çekilemedi, HTTP hata kodu: ${roomResponse.status}`);
                         }
                         const roomData = await roomResponse.text();
                         const roomSC = roomData.split("https://")[1].split(".")[0];
@@ -886,21 +887,21 @@
                                 if (!wsResolved) {
                                     console.error(`[${room.code}] WebSocket hatası:`, error);
                                     clearTimeout(timeout);
-                                    reject(error); // Hata durumunda Promise'i reddet
+                                    reject(new Error(`[${room.code}] WebSocket error: ${error.message || 'Bilinmeyen hata'}`)); // Daha spesifik hata mesajı
                                 }
                             };
 
                             ws.onclose = () => {
                                 if (!wsResolved) { 
                                     // Eğer bağlantı beklenmedik şekilde kapandıysa (ve henüz resolve/reject olmadıysa)
-                                    reject(new Error(`[${room.code}] WebSocket bağlantısı beklenmedik şekilde kapandı.`));
+                                    reject(new Error(`[${room.code}] WebSocket bağlantısı beklenmedik şekilde kapandı veya veri alınamadı.`));
                                 }
                             };
                         });
                         
                     } catch (error) {
                         // Bir oda için fetch veya WebSocket hatası olursa, sadece konsola logla ve bir sonraki odaya geç.
-                        console.warn(`Oda ${room.code} işlenirken hata oluştu veya boş oda. Atlanıyor:`, error.message);
+                        console.warn(`Oda ${room.code} işlenirken hata oluştu veya boş oda olduğu varsayıldı. Atlanıyor:`, error.message);
                     }
 
                     // Her oda arasında gecikme
@@ -908,11 +909,11 @@
                 }
 
             } catch (error) {
-                console.error('Oda listesi çekilirken genel hata oluştu:', error.message);
+                console.error('Genel işlem sırasında hata oluştu (oda listesi veya döngü dışı):', error.message);
             } finally {
                 loadingIndicator.style.display = 'none';
                 refreshButton.disabled = false;
-                isProcessingRooms = false;
+                isProcessingRooms = false; // İşlem bitti olarak işaretle
             }
         }
         
@@ -946,8 +947,13 @@
             localStorage.setItem('favoriteUsers', JSON.stringify(favoriteUsers));
         }
 
+        // Buradaki event listener'ı güncelliyoruz!
+        f('#refreshButton').addEventListener('click', () => {
+            isProcessingRooms = false; // Önceki takılmayı temizle
+            listusers(currentLanguage);
+        });
+
         f('#themeToggle').addEventListener('click', toggleTheme);
-        f('#refreshButton').addEventListener('click', () => listusers(currentLanguage));
     </script>
 </body>
 </html>
