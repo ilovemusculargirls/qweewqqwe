@@ -3,367 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gartic.io Oda ve Kullanıcı Görüntüleyici</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>Gartic.io Oyuncu Listesi</title>
     <style>
-        :root {
-            --primary-color: #6a0dad; /* Mor */
-            --secondary-color: #ffd700; /* Altın sarısı */
-            --background-color: #1a1a2e; /* Koyu morumsu mavi */
-            --card-background: #2a2a4a; /* Daha koyu kart arka planı */
-            --text-color: #e0e0e0; /* Açık gri */
-            --border-radius: 8px;
-            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
+        /* Bu stil kodları sadece temel elemanları görünür kılmak içindir. */
+        /* Kendi tasarımınız için bu alanı tamamen değiştirebilir veya harici bir CSS dosyası bağlayabilirsiniz. */
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background-image: url('https://i.pinimg.com/originals/35/dd/54/35dd549d2db3db16dd15c09cec685fb3.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: repeat;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-sizing: border-box;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
         }
-
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
         .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .counts {
             display: flex;
-            flex-wrap: wrap; /* Küçük ekranlarda alta geçiş için */
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background-color: #333;
-            width: 100%;
-            box-sizing: border-box;
-            gap: 10px; /* Elemanlar arası boşluk */
-        }
-
-        #playerCount {
-            color: var(--secondary-color);
-            font-size: 18px;
+            justify-content: space-around;
+            padding: 10px 0;
+            font-size: 1.1em;
             font-weight: bold;
+            color: #555;
         }
-
-        #totalPlayerCount {
-            color: #fff;
-            font-size: 16px;
-        }
-
-        .filter-checkboxes {
+        .controls {
             display: flex;
             flex-wrap: wrap;
+            gap: 15px;
             justify-content: center;
-            gap: 15px; /* Checkbox'lar arası boşluk */
-            margin: 10px 0; /* Header içinde uygun boşluk */
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #e9e9e9;
+            border-radius: 6px;
         }
-
-        .filter-checkbox label {
+        .controls input[type="text"] {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        .controls label {
             display: flex;
             align-items: center;
-            color: #fff;
-            font-size: 15px;
+            gap: 5px;
+            font-size: 1em;
+            cursor: pointer;
         }
-
-        .filter-checkbox input[type="checkbox"] {
-            margin-right: 5px;
-            transform: scale(1.2); /* Checkbox boyutunu büyüt */
+        .controls input[type="checkbox"] {
+            transform: scale(1.2);
+            cursor: pointer;
         }
-
-
-        .search-input {
-            width: calc(100% - 40px); /* Padding'i hesaba kat */
-            max-width: 400px;
-            margin: 20px auto 10px auto; /* Ortala ve üst/alt boşluk */
-            padding: 12px 20px;
-            font-size: 16px;
-            border: 1px solid var(--primary-color);
-            border-radius: var(--border-radius);
-            background-color: var(--card-background);
-            color: var(--text-color);
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        .search-input:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-        }
-
-        .users-container {
+        #usersContainer {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-            width: 100%;
-            max-width: 1200px;
-            box-sizing: border-box;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Oyuncu kartlarını yan yana dizmek için */
+            gap: 15px;
         }
-
         .user {
-            margin: 0; /* Grid gap ile boşluk verileceği için margin 0 */
+            display: flex;
+            align-items: center;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
             padding: 15px;
-            border: 1px solid var(--primary-color);
-            border-radius: var(--border-radius);
-            background-color: var(--background-color); /* Ana arka plan rengiyle uyumlu */
-            box-shadow: var(--box-shadow);
-            display: flex; /* İçerik düzeni için flex */
-            align-items: center; /* Resim ve metin dikeyde ortalı */
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out;
         }
         .user:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-            border-color: var(--secondary-color);
+            transform: translateY(-3px);
         }
-
-
         .user img {
-            width: 50px; /* Daha büyük profil fotoğrafı */
+            width: 50px;
             height: 50px;
             border-radius: 50%;
+            object-fit: cover;
             margin-right: 15px;
-            border: 2px solid var(--secondary-color); /* Fotoğraf çerçevesi */
-            object-fit: cover; /* Resmin oranını korurken div'i doldur */
+            cursor: pointer; /* Profil modalını açmak için */
         }
-
         .user div {
-            flex-grow: 1; /* Kalan alanı kapla */
-            color: var(--text-color);
+            flex-grow: 1;
         }
-
         .user b {
-            color: var(--secondary-color);
             font-size: 1.1em;
-            word-break: break-word; /* Uzun isimler için satır sonu */
+            color: #333;
         }
         .user i {
-            color: #ccc;
+            color: #666;
             font-size: 0.9em;
         }
-
         .user a {
-            color: var(--primary-color);
             text-decoration: none;
+            color: #007bff;
             font-weight: bold;
-            transition: color 0.2s ease;
+            margin-left: 5px;
         }
         .user a:hover {
-            color: var(--secondary-color);
             text-decoration: underline;
         }
-
-        .download-btn,
-        .discord-profile-btn {
-            margin-top: 8px;
-            padding: 6px 10px;
-            font-size: 0.85em;
-            cursor: pointer;
-            border-radius: 4px;
+        .user .download-btn, .user .discord-profile-btn {
             display: inline-block;
-            transition: background-color 0.2s ease, color 0.2s ease;
-            text-decoration: none; /* Linkler için alt çizgi olmasın */
+            margin-top: 10px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-right: 8px;
+            color: white;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+        .user .download-btn {
+            background-color: #28a745; /* Yeşil */
+        }
+        .user .download-btn:hover {
+            background-color: #218838;
+        }
+        .user .discord-profile-btn {
+            background-color: #7289da; /* Discord mavisi */
+        }
+        .user .discord-profile-btn:hover {
+            background-color: #6177b9;
         }
 
-        .download-btn {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: none;
-            margin-right: 5px;
-        }
-        .download-btn:hover {
-            background-color: #5a0a9d; /* Koyu mor hover */
+        .status-message {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+            margin-top: 20px;
+            font-size: 1.1em;
         }
 
-        .discord-profile-btn {
-            background-color: #5865F2; /* Discord mavisi */
-            color: #fff;
-            border: none;
-        }
-        .discord-profile-btn:hover {
-            background-color: #4752C4; /* Koyu Discord mavisi hover */
-        }
-
-
-        .profile-container {
-            display: none;
+        /* Profil Modalı Stilleri */
+        .profile-modal {
+            display: none; /* Varsayılan olarak gizli */
             position: fixed;
-            top: 0;
+            z-index: 1000;
             left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0,0,0,0.6); /* Yarı şeffaf siyah arka plan */
             justify-content: center;
             align-items: center;
-            z-index: 1000; /* Üstte olması için */
         }
-
-        .profile-content {
-            background: var(--background-color);
+        .modal-content {
+            background-color: #fff;
             padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            max-width: 500px;
-            width: 90%;
+            border-radius: 10px;
             text-align: center;
+            color: #333;
             position: relative;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-
-        .close-btn {
-            cursor: pointer;
-            color: #e74c3c;
+        .modal-content .close-btn {
             position: absolute;
-            top: 10px;
-            right: 15px;
+            top: 15px;
+            right: 20px;
             font-size: 28px;
-            font-weight: bold;
-            line-height: 1; /* Dikey hizalama */
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.2s;
         }
-        .close-btn:hover {
-            color: #c0392b;
+        .modal-content .close-btn:hover {
+            color: #333;
         }
-
-        .profile-content h2 {
-            color: var(--secondary-color);
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.8em;
-        }
-
-        .profile-content img {
-            width: 100px;
-            height: 100px;
+        .modal-content img {
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
-            border: 3px solid var(--secondary-color);
-            margin-bottom: 15px;
             object-fit: cover;
+            margin-bottom: 20px;
+            border: 3px solid #eee;
         }
-
-        .profile-content p {
+        .modal-content h2 {
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .modal-content p {
             font-size: 1.1em;
             margin-bottom: 20px;
         }
-
-
-        #advertisementBar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%; /* Tam genişlik */
-            height: 50px;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center; /* Metni ortala */
-            overflow: hidden;
-            z-index: 999; /* Diğer içeriklerin altında kalmasın ama modalın altında */
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+        .modal-content button {
+            background-color: #007bff; /* Mavi */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 1em;
+            transition: background-color 0.2s;
         }
-
-        #advertisementGif {
-            height: 40px; /* GIF yüksekliği */
-            margin-right: 10px;
-            border-radius: 5px; /* Hafif yuvarlak kenar */
-            object-fit: contain; /* Oranları koru */
+        .modal-content button:hover {
+            background-color: #0056b3;
         }
-
-        #advertisementText {
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        .modal-content button.discord {
+            background-color: #7289da; /* Discord mavisi */
         }
-
-        /* Responsive Ayarlamalar */
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .filter-checkboxes {
-                justify-content: flex-start;
-                margin-top: 15px;
-            }
-            .search-input {
-                width: calc(100% - 40px);
-            }
-            .users-container {
-                grid-template-columns: 1fr;
-            }
-            .user {
-                width: auto;
-            }
-        }
-        @media (max-width: 480px) {
-            .filter-checkbox label {
-                font-size: 14px;
-            }
-            .filter-checkbox input[type="checkbox"] {
-                transform: scale(1.1);
-            }
-            .download-btn,
-            .discord-profile-btn {
-                font-size: 0.8em;
-                padding: 5px 8px;
-            }
-            #advertisementText {
-                font-size: 16px;
-            }
+        .modal-content button.discord:hover {
+            background-color: #6177b9;
         }
     </style>
 </head>
-
 <body>
-    <div class="header">
-        <div>
-            <div id="playerCount">Aktif Gösterilen Oyuncu Sayısı: 0</div>
-            <div id="totalPlayerCount">Toplam Taranan Oyuncu Sayısı: 0</div>
+    <div class="container">
+        <div class="header">
+            <h1>Gartic.io Oyuncu Listesi</h1>
+            <div class="counts">
+                <span id="playerCount">Aktif Gösterilen Oyuncu Sayısı: 0</span>
+                <span id="totalPlayerCount">Toplam Kişi Sayısı: 0</span>
+            </div>
         </div>
 
-        <div class="filter-checkboxes">
-            <label class="filter-checkbox">
-                <input type="checkbox" id="havefotoCheckbox" onchange="filterUsers()"> Sadece Profil Fotoğrafı Olanlar
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Oyuncu ara...">
+            
+            <label>
+                <input type="checkbox" id="havefotoCheckbox"> Fotoğraflı
             </label>
-            <label class="filter-checkbox">
-                <input type="checkbox" id="nofotoCheckbox" onchange="filterUsers()"> Profil Fotoğrafı Olmayanlar
+            <label>
+                <input type="checkbox" id="nofotoCheckbox"> Fotosuz
             </label>
-            <label class="filter-checkbox">
-                <input type="checkbox" id="discordCheckbox" onchange="filterUsers()"> Discord ile Giriş Yapanlar
+            <label>
+                <input type="checkbox" id="discordCheckbox"> Discord
             </label>
         </div>
-    </div>
 
-    <input type="text" class="search-input" id="searchInput" onkeyup="searchUsers()" placeholder="Kullanıcı Ara...">
-
-    <div class="users-container" id="usersContainer">
-        <p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>
-    </div>
-
-    <div class="profile-container" id="profileContainer">
-        <div class="profile-content">
-            <span class="close-btn" onclick="closeProfile()">×</span>
-            <h2 id="profileTitle"></h2>
-            <img id="profileImage" width="80" alt="Profile Photo">
-            <p id="profileName"></p>
-            <span id="downloadLink" class="download-btn" onclick="downloadPhotoFromModal()">Fotoğrafı İndir</span>
-            <span id="discordProfileBtn" class="discord-profile-btn" onclick="openDiscordProfileFromModal()">Discord Profili</span>
+        <div id="usersContainer">
+            <p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>
         </div>
+        
+        <p id="status-info" class="status-message"></p>
     </div>
-    
-    <div id="advertisementBar">
-        <span id="advertisementText">Discord: garou#0001</span>
+
+    <div id="profileContainer" class="profile-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeProfile()">&times;</span>
+            <h2 id="profileTitle">Profil</h2>
+            <img id="profileImage" src="" alt="Profil Fotoğrafı">
+            <p id="profileName">Kullanıcı Adı:</p>
+            <button id="downloadLink" onclick="downloadPhotoFromModal()">Fotoğrafı İndir</button>
+            <button id="discordProfileBtn" class="discord" onclick="openDiscordProfileFromModal()" style="display: none;">Discord Profili</button>
+        </div>
     </div>
 
     <script>
+        // JavaScript kodun buraya gelecek
         const f = (x) => document.querySelector(x);
         const fa = (x) => document.querySelectorAll(x);
 
-        let totalProcessedPlayers = 0; // Toplam taranan oyuncu sayısı için yeni isim
-        let playersData = {}; // Tüm oyuncu verilerini tutacak global nesne
+        let totalProcessedPlayers = 0; // Toplam taranan benzersiz oyuncu sayısı
+        let playersData = {}; // Tüm benzersiz oyuncu verilerini tutacak global nesne
         let allRooms = []; // Tüm odaları saklayacak dizi
         let currentRoomIndex = 0; // Şu an işlenen odanın indeksi
 
@@ -377,18 +282,43 @@
         let currentProfilePhotoURL = '';
         let currentProfileDiscordID = '';
 
+        // DOM elementleri
+        const usersContainer = f('#usersContainer'); // Oyuncuların listelendiği ana div
+        const searchInput = f('#searchInput') || f('#username-search'); // Arama inputu
+        const statusInfoElement = f('#status-info') || document.createElement('p'); // Durum mesajı alanı
+        if (!f('#status-info')) {
+            statusInfoElement.id = 'status-info';
+            statusInfoElement.className = 'status-message';
+            const container = f('.container');
+            if (container) {
+                container.appendChild(statusInfoElement);
+            } else {
+                document.body.appendChild(statusInfoElement);
+            }
+        }
+        
+        // Filtre checkbox'larını bulma
+        const havefotoCheckbox = f("#havefotoCheckbox");
+        const nofotoCheckbox = f("#nofotoCheckbox");
+        const discordCheckbox = f("#discordCheckbox");
+
+        // Sayı güncellemeleri
         function updatePlayerCount(count) {
             const playerCountElement = f("#playerCount");
-            playerCountElement.textContent = `Aktif Gösterilen Oyuncu Sayısı: ${count}`;
+            if (playerCountElement) {
+                // Sadece aktif gösterilen oyuncu sayısı. Kullanıcının örneğinde boş bırakılmıştı, ama daha mantıklı bir değer gösterelim.
+                playerCountElement.textContent = `Aktif Gösterilen Oyuncu Sayısı: ${count}`;
+            }
         }
 
         function updateTotalPlayerCount(count) {
             const totalPlayerCountElement = f("#totalPlayerCount");
-            totalPlayerCountElement.textContent = `Toplam Taranan Oyuncu Sayısı: ${count}`;
+            if (totalPlayerCountElement) {
+                totalPlayerCountElement.textContent = `Toplam kişi sayısı: ${count}`;
+            }
         }
 
         function updateStatus(message) {
-            const statusInfoElement = f("#status-info");
             if (statusInfoElement) {
                 statusInfoElement.textContent = message;
             }
@@ -396,10 +326,13 @@
 
         // Gartic.io API'sinden oda listesini çekme
         function fetchGarticRooms() {
-            f("#usersContainer").innerHTML = '<p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>';
+            if (usersContainer) {
+                usersContainer.innerHTML = '<p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>';
+            }
+            
             totalProcessedPlayers = 0;
             updateTotalPlayerCount(totalProcessedPlayers);
-            updatePlayerCount(0); // Filtrelenen sayısını da sıfırla
+            updatePlayerCount(0); // Aktif gösterilen sayısını sıfırla
 
             playersData = {}; // Önceki oyuncu verilerini temizle
             allRooms = []; // Oda listesini sıfırla
@@ -417,7 +350,9 @@
                 })
                 .then(rooms => {
                     if (rooms.length === 0) {
-                        f("#usersContainer").innerHTML = '<p class="status-message">Bu dilde (Türkçe) oda bulunamadı.</p>';
+                        if (usersContainer) {
+                            usersContainer.innerHTML = '<p class="status-message">Bu dilde (Türkçe) oda bulunamadı.</p>';
+                        }
                         updateStatus('Oda listesi çekildi: 0 oda bulundu.');
                         const loadingMessage = f("#loading-message");
                         if (loadingMessage) loadingMessage.remove();
@@ -429,7 +364,9 @@
                 })
                 .catch(error => {
                     console.error('Oda listesi çekilirken hata oluştu:', error);
-                    f("#usersContainer").innerHTML = '<p class="status-message">Odalar yüklenirken bir hata oluştu.</p>';
+                    if (usersContainer) {
+                        usersContainer.innerHTML = '<p class="status-message">Odalar yüklenirken bir hata oluştu.</p>';
+                    }
                     updateStatus(`Hata: Oda listesi çekilemedi. ${error.message}`);
                 });
         }
@@ -439,17 +376,19 @@
             if (currentRoomIndex >= allRooms.length) {
                 filterUsers(); // Tüm odalar işlendikten sonra filtrelemeyi çalıştır
                 if (Object.keys(playersData).length === 0) {
-                    f("#usersContainer").innerHTML = '<p class="status-message">Hiç oyuncu bulunamadı.</p>';
+                    if (usersContainer) {
+                        usersContainer.innerHTML = '<p class="status-message">Hiç oyuncu bulunamadı.</p>';
+                    }
                 } else {
                     const loadingMessage = f("#loading-message");
                     if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
                 }
-                updateStatus(`Tüm ${allRooms.length} Türkçe oda tarandı. Toplam ${Object.keys(playersData).length} oyuncu bulundu.`);
+                updateStatus(`Tüm ${allRooms.length} Türkçe oda tarandı. Toplam ${Object.keys(playersData).length} benzersiz oyuncu bulundu.`);
                 return;
             }
 
             const room = allRooms[currentRoomIndex];
-            updateStatus(`Oda taranıyor: ${room.name || 'Bilinmiyor Oda'} (${currentRoomIndex + 1}/${allRooms.length}). Son gecikme: ${retryDelay / 1000}s`);
+            updateStatus(`Oda taranıyor: ${room.name || 'Bilinmiyor Oda'} (Kodu: ${room.code}) (${currentRoomIndex + 1}/${allRooms.length}). Son gecikme: ${retryDelay / 1000}s`);
 
             // Gecikmeyi burada uyguluyoruz
             setTimeout(() => {
@@ -483,11 +422,10 @@
                         ws.onmessage = (msg) => {
                             if (msg.data.indexOf('42["5"') !== -1) {
                                 try {
-                                    // Sizin orijinal addPlayers fonksiyonunuzdaki gibi JSON parse etme
                                     const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
                                     const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
                                     
-                                    addPlayersToGlobalList(playerInfo, room);
+                                    addPlayers(playerInfo, room.code); // room.code'u roomlink olarak gönder
                                 } catch (e) {
                                     console.error("Oyuncu verisi ayrıştırma hatası:", e, "Mesaj:", msg.data);
                                 }
@@ -510,7 +448,7 @@
                     })
                     .catch(error => {
                         console.error(`Oda ${room.code || 'Bilinmiyor'} için veri çekilirken hata oluştu:`, error.message);
-                        retryDelay = Math.min(retryDelay * 1.5, maxDelay);
+                        retryDelay = Math.min(retryDelay * 1.5, maxDelay); // Hata durumunda gecikmeyi artır
                         currentRoomIndex++;
                         updateStatus(`Hata! Oda ${room.name || 'Bilinmiyor'} (${room.code || 'N/A'}) tararken problem. Bir sonraki oda ${retryDelay / 1000}s sonra denenecek.`);
                         fetchNextRoom();
@@ -518,58 +456,51 @@
             }, retryDelay);
         }
 
-        // Oyuncuları global listeye ekle/güncelle (bu yeni addPlayers fonksiyonu)
-        function addPlayersToGlobalList(users, room) {
+        // Oyuncuları global listeye ekle/güncelle (senin addPlayers ismine benzetildi)
+        function addPlayers(users, roomCode) { // roomCode, senin roomlink'ine karşılık gelir
             users.forEach(user => {
                 const playerName = user.nick && user.nick.trim() !== '' ? user.nick : 'İsimsiz Oyuncu';
-                // Oyuncu daha önce eklenmişse ve aynı odadaysa güncelleme yapmayız.
-                // Ama farklı bir odadan geliyorsa güncelle.
-                if (!playersData[user.id]) { // Sadece ilk kez gördüğümüz oyuncuları ekle
+                
+                if (!playersData[user.id]) { // Oyuncu daha önce eklenmemişse
                     playersData[user.id] = {
                         id: user.id, // Oyuncu ID'si
                         nick: playerName,
                         pontos: user.pontos || 0, // Puan yoksa 0
                         foto: user.foto || null,
                         avatar: user.avatar || null,
-                        roomName: room.name || 'Bilinmiyor Oda',
-                        roomCode: room.code || 'N/A',
-                        roomType: room.type || 'Bilinmiyor',
-                        roomPlayers: room.players || 0,
-                        roomMaxPlayers: room.maxPlayers || 0,
-                        roomCountry: room.country || 'Bilinmiyor',
-                        roomLanguage: room.language || 'Bilinmiyor',
+                        roomCode: roomCode, // Sadece oda kodu tutuluyor
                         isDiscordUser: (user.foto && user.foto.includes("cdn.discordapp.com"))
                     };
                     totalProcessedPlayers++;
                 }
             });
             updateTotalPlayerCount(totalProcessedPlayers);
-            filterUsers(); // Yeni veriler geldiğinde listeyi güncelle
+            filterUsers(); // Yeni veriler geldiğinde listeyi güncelle ve gösterilen oyuncu sayısını günceller
         }
 
         // Kullanıcıları filtrele ve HTML'i güncelle
         function filterUsers() {
-            const usersContainer = f("#usersContainer");
-            usersContainer.innerHTML = ''; // Listeyi temizle
+            if (!usersContainer) return;
 
+            // Yükleniyor mesajı hala varsa, onu koru ve diğer içeriği temizle
             const loadingMessage = f("#loading-message");
-            if (loadingMessage) { // Eğer yükleniyor mesajı hala varsa, onu koru
+            usersContainer.innerHTML = ''; 
+            if (loadingMessage) { 
                 usersContainer.appendChild(loadingMessage);
             }
 
-            const searchTerm = f("#searchInput").value.toLowerCase();
-            const havefotoChecked = f("#havefotoCheckbox").checked;
-            const nofotoChecked = f("#nofotoCheckbox").checked;
-            const discordChecked = f("#discordCheckbox").checked;
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const havefotoChecked = havefotoCheckbox ? havefotoCheckbox.checked : false;
+            const nofotoChecked = nofotoCheckbox ? nofotoCheckbox.checked : false;
+            const discordChecked = discordCheckbox ? discordCheckbox.checked : false;
 
-            // Checkbox durumuna göre diğer checkboxları devre dışı bırakma
-            f("#nofotoCheckbox").disabled = havefotoChecked || discordChecked;
-            f("#havefotoCheckbox").disabled = nofotoChecked || discordChecked;
-            f("#discordCheckbox").disabled = havefotoChecked || nofotoChecked;
+            // Checkbox durumuna göre diğer checkboxları devre dışı bırakma (senin örnekteki gibi)
+            if (havefotoCheckbox) havefotoCheckbox.disabled = nofotoChecked || discordChecked;
+            if (nofotoCheckbox) nofotoCheckbox.disabled = havefotoChecked || discordChecked;
+            if (discordCheckbox) discordCheckbox.disabled = havefotoChecked || nofotoChecked;
             
             let displayedPlayerCount = 0;
 
-            // playersData içindeki tüm oyuncuları döngüye al
             for (const playerId in playersData) {
                 const player = playersData[playerId];
                 const playerNameLower = player.nick.toLowerCase();
@@ -592,30 +523,29 @@
                 }
                 // Hiçbir checkbox seçili değilse ve oyuncu Discord kullanıcısı değilse veya fotoğrafı yoksa da göster
                 if (!havefotoChecked && !nofotoChecked && !discordChecked) {
-                    showPlayer = true;
+                    showPlayer = true; // Tüm filtreler kapalıysa hepsini göster
                 }
 
                 if (showPlayer) {
                     const foto = player.foto || `https://gartic.io/static/images/avatar/svg/${player.avatar || 'avatar_default'}.svg`;
-                    const uclass = player.foto ? "havefoto" : "nofoto";
-                    const discordClass = player.isDiscordUser ? "discord" : "";
+                    
+                    // Senin "izlemeyedek.html" dosyasındaki HTML yapına benzetildi.
+                    const discordID = extractDiscordID(player.foto);
+                    const discordProfileButton = player.isDiscordUser ? `<span class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</span>` : "";
 
-                    const discordProfileButton = player.isDiscordUser ?
-                        `<span class="discord-profile-btn" onclick="openDiscordProfile('${extractDiscordID(player.foto)}')">Discord Profili</span>` : "";
-
-                    // Kullanıcı kartını ekle
-                    usersContainer.innerHTML += `
-                        <div class="user flex ${uclass} ${discordClass}">
-                            <img width="40" src="${foto}" alt="${player.nick || 'İsimsiz'} Profil Fotoğrafı">
+                    const playerCardHtml = `
+                        <div class="user flex ${player.foto ? "havefoto" : "nofoto"} ${player.isDiscordUser ? "discord" : ""}">
+                            <img width="50" height="50" src="${foto}" alt="${player.nick || 'İsimsiz'} Profil Fotoğrafı" onclick="openProfile('${player.nick}', '${foto}')">
                             <div>
                                 <b>${player.nick}</b><br>
                                 <i>${player.pontos || 0} pt</i>&nbsp;&nbsp;
-                                <a target="_blank" href="https://gartic.io/play/${player.roomCode}">${player.roomName} (#${player.roomCode})</a><br>
+                                <a target="_blank" href="https://gartic.io/play/${player.roomCode}">#${player.roomCode}</a><br>
                                 <span class="download-btn" onclick="downloadPhoto('${foto}', '${player.nick}')">Fotoğrafı İndir</span>
                                 ${discordProfileButton}
                             </div>
                         </div>
                     `;
+                    usersContainer.innerHTML += playerCardHtml;
                     displayedPlayerCount++;
                 }
             }
@@ -623,10 +553,11 @@
             updatePlayerCount(displayedPlayerCount); // Filtrelenen oyuncu sayısını güncelle
 
             if (displayedPlayerCount === 0 && !loadingMessage) {
-                usersContainer.innerHTML = '<p class="status-message">Aradığınız kriterlere uygun oyuncu veya oda bulunamadı.</p>';
+                if (usersContainer) {
+                    usersContainer.innerHTML = '<p class="status-message">Aradığınız kriterlere uygun oyuncu bulunamadı.</p>';
+                }
             }
         }
-
 
         // Discord ID'yi URL'den çıkar
         function extractDiscordID(avatarURL) {
@@ -636,22 +567,33 @@
         }
 
         // Modalı açan fonksiyon
-        function openProfile(nick, foto, discordID) {
+        function openProfile(nick, foto) { // Senin openProfile parametrelerine benzetildi
             const profileContainer = f("#profileContainer");
-            f("#profileTitle").textContent = `Profil: ${nick}`;
-            f("#profileImage").src = foto;
-            f("#profileImage").alt = `${nick} Profil Fotoğrafı`;
-            f("#profileName").textContent = `Kullanıcı Adı: ${nick}`;
+            if (!profileContainer) {
+                console.warn("Profil modalı bulunamadı. Lütfen HTML'inizde #profileContainer elementinin olduğundan emin olun.");
+                return;
+            }
+            const profileTitle = f("#profileTitle");
+            const profileImage = f("#profileImage");
+            const profileName = f("#profileName");
+            const discordProfileBtn = f("#discordProfileBtn");
+
+            if (profileTitle) profileTitle.textContent = `Profil: ${nick}`;
+            if (profileImage) {
+                profileImage.src = foto;
+                profileImage.alt = `${nick} Profil Fotoğrafı`;
+            }
+            if (profileName) profileName.textContent = `Kullanıcı Adı: ${nick}`;
 
             currentProfilePhotoURL = foto; // Modalın içinden indirmek için URL'yi sakla
-            currentProfileDiscordID = discordID; // Modalın içinden Discord profilini açmak için ID'yi sakla
+            currentProfileDiscordID = extractDiscordID(foto); // Modalın içinden Discord profilini açmak için ID'yi sakla
 
-            // Discord profili butonu görünürlüğünü ayarla
-            const discordProfileBtn = f("#discordProfileBtn");
-            if (discordID) {
-                discordProfileBtn.style.display = 'inline-block';
-            } else {
-                discordProfileBtn.style.display = 'none';
+            if (discordProfileBtn) {
+                if (currentProfileDiscordID) {
+                    discordProfileBtn.style.display = 'inline-block';
+                } else {
+                    discordProfileBtn.style.display = 'none';
+                }
             }
 
             profileContainer.style.display = 'flex';
@@ -659,25 +601,28 @@
 
         // Modalı kapatan fonksiyon
         function closeProfile() {
-            f("#profileContainer").style.display = 'none';
+            const profileContainer = f("#profileContainer");
+            if (profileContainer) {
+                profileContainer.style.display = 'none';
+            }
         }
 
-        // Modal içinden fotoğraf indirme
+        // Modal içinden fotoğraf indirme (modal butonuna bağlanmalı)
         function downloadPhotoFromModal() {
             if (currentProfilePhotoURL) {
-                const userName = f("#profileName").textContent.replace('Kullanıcı Adı: ', '');
+                const userName = f("#profileName") ? f("#profileName").textContent.replace('Kullanıcı Adı: ', '') : 'Kullanıcı';
                 downloadPhoto(currentProfilePhotoURL, userName);
             }
         }
 
-        // Modal içinden Discord profilini açma
+        // Modal içinden Discord profilini açma (modal butonuna bağlanmalı)
         function openDiscordProfileFromModal() {
             if (currentProfileDiscordID) {
                 window.open(`https://discordlookup.com/user/${currentProfileDiscordID}`, '_blank');
             }
         }
 
-        // Doğrudan kullanıcı kartından fotoğraf indirme
+        // Doğrudan kullanıcı kartından fotoğraf indirme veya modal dışından kullanılabilir
         function downloadPhoto(photoURL, userName) {
             const downloadLink = document.createElement('a');
             downloadLink.href = photoURL;
@@ -685,6 +630,15 @@
             downloadLink.target = "_blank";
             downloadLink.click();
         }
+
+        // Arama ve filtreleme olay dinleyicileri
+        if (searchInput) {
+            searchInput.addEventListener('input', filterUsers); // Arama yapıldığında filtreleme yapsın
+        }
+
+        if (havefotoCheckbox) havefotoCheckbox.addEventListener('change', filterUsers);
+        if (nofotoCheckbox) nofotoCheckbox.addEventListener('change', filterUsers);
+        if (discordCheckbox) discordCheckbox.addEventListener('change', filterUsers);
 
         // Başlangıçta odaları yükle
         fetchGarticRooms();
