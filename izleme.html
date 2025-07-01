@@ -173,6 +173,16 @@
             <input type="text" id="username-search" placeholder="Oyuncu Adı ile Ara...">
             <select id="language-select">
                 <option value="tr">Türkçe</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+                <option value="jp">日本語</option>
+                <option value="cn">中文</option>
                 </select>
         </div>
         <div class="filters">
@@ -193,11 +203,15 @@
         const languageSelect = document.getElementById('language-select');
         const filterItems = document.querySelectorAll('.filter-item');
         let currentFilter = 'all';
+        let allRooms = []; // Tüm odaları saklayacak dizi
+        let currentRoomIndex = 0; // Şu an işlenen odanın indeksi
 
         // Gartic.io API'sinden oda listesini çekme ve oyuncuları işleme
         function fetchGarticRooms(lang = 'tr') {
             playerListDiv.innerHTML = '<p id="loading-message">Odalar yükleniyor, lütfen bekleyin...</p>';
             Object.keys(playersData).forEach(key => delete playersData[key]); // Önceki verileri temizle
+            allRooms = []; // Oda listesini sıfırla
+            currentRoomIndex = 0; // İndeksi sıfırla
 
             fetch(`https://gartic.io/req/list?search=&language[]=8`)
                 .then(x => x.json())
@@ -206,75 +220,8 @@
                         playerListDiv.innerHTML = '<p>Bu dilde oda bulunamadı.</p>';
                         return;
                     }
-                    let index = 0;
-                    const maxRequestsPerSecond = 5; // Her saniye 5 istek
-                    const delayBetweenRequests = 1000 / maxRequestsPerSecond; // MS cinsinden gecikme
-
-                    function fetchRoom() {
-                        if (index >= rooms.length) {
-                            filterUsers(); // Tüm odalar işlendikten sonra filtrelemeyi çalıştır
-                            if (Object.keys(playersData).length === 0) {
-                                playerListDiv.innerHTML = '<p>Hiç oyuncu bulunamadı.</p>';
-                            } else {
-                                document.getElementById('loading-message').remove(); // Yükleniyor mesajını kaldır
-                            }
-                            return;
-                        }
-
-                        const room = rooms[index];
-                        index++;
-
-                        // Odadaki oyuncu sayısı 0 ise ve boş oda göstermiyorsak atla
-                        if (currentFilter !== 'empty' && room.players === 0) {
-                            setTimeout(fetchRoom, 0); // Anında bir sonraki odaya geç
-                            return;
-                        }
-
-                        // Çok fazla istek göndermemek için gecikme ekle
-                        setTimeout(() => {
-                            fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
-                                .then(x => x.text())
-                                .then(x => {
-                                    const roomSC = x.split("https://")[1].split(".")[0];
-                                    let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
-
-                                    ws.onopen = () => {
-                                        ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
-                                        ws.send('42[46,0]');
-                                    }
-
-                                    ws.onmessage = (msg) => {
-                                        if (msg.data.indexOf('42["5"') !== -1) {
-                                            try {
-                                                const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
-                                                const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
-                                                addPlayers(playerInfo, room);
-                                                filterUsers(); // Yeni veriler geldiğinde listeyi güncelle
-                                            } catch (e) {
-                                                console.error("Player data parse error:", e);
-                                            }
-                                        }
-                                        ws.close(); // Mesajı aldıktan sonra WebSocket'i kapat
-                                    }
-
-                                    ws.onerror = (err) => {
-                                        console.error(`WebSocket error for room ${room.code}:`, err);
-                                        ws.close(); // Hata durumunda da kapat
-                                    }
-
-                                    ws.onclose = () => {
-                                        // WebSocket kapatıldığında bir sonraki odaya geç
-                                        fetchRoom();
-                                    };
-                                })
-                                .catch(error => {
-                                    console.error(`Error fetching room data for ${room.code}:`, error);
-                                    setTimeout(fetchRoom, 0); // Hata durumunda bile devam et
-                                });
-                        }, delayBetweenRequests);
-                    }
-
-                    fetchRoom(); // İlk odayı almak için başlat
+                    allRooms = rooms; // Tüm odaları kaydet
+                    fetchNextRoom(); // İlk odayı işlemeye başla
                 })
                 .catch(error => {
                     console.error('Error fetching room list:', error);
@@ -282,10 +229,74 @@
                 });
         }
 
+        // Bir sonraki odayı işleyen fonksiyon
+        function fetchNextRoom() {
+            if (currentRoomIndex >= allRooms.length) {
+                filterUsers(); // Tüm odalar işlendikten sonra filtrelemeyi çalıştır
+                if (Object.keys(playersData).length === 0) {
+                    playerListDiv.innerHTML = '<p>Hiç oyuncu bulunamadı.</p>';
+                } else {
+                    const loadingMessage = document.getElementById('loading-message');
+                    if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
+                }
+                return;
+            }
+
+            const room = allRooms[currentRoomIndex];
+            currentRoomIndex++;
+
+            // Odadaki oyuncu sayısı 0 ise ve boş oda göstermiyorsak atla
+            // Bu kontrolü kaldırdım çünkü oyuncu sayısı 0 olsa bile odaya bağlanıp gerçekten boş olup olmadığını kontrol etmek isteyebiliriz.
+            // if (currentFilter !== 'empty' && room.players === 0) {
+            //     fetchNextRoom(); // Anında bir sonraki odaya geç
+            //     return;
+            // }
+
+            fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
+                .then(x => x.text())
+                .then(x => {
+                    const roomSC = x.split("https://")[1].split(".")[0];
+                    let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
+
+                    ws.onopen = () => {
+                        ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
+                        ws.send('42[46,0]');
+                    }
+
+                    ws.onmessage = (msg) => {
+                        if (msg.data.indexOf('42["5"') !== -1) {
+                            try {
+                                const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
+                                const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
+                                addPlayers(playerInfo, room);
+                            } catch (e) {
+                                console.error("Player data parse error:", e);
+                            }
+                        }
+                        ws.close(); // Mesajı aldıktan sonra WebSocket'i kapat
+                    }
+
+                    ws.onerror = (err) => {
+                        console.error(`WebSocket error for room ${room.code}:`, err);
+                        ws.close(); // Hata durumunda da kapat
+                    }
+
+                    ws.onclose = () => {
+                        // WebSocket kapatıldığında (başarılı veya hatalı fark etmez) bir sonraki odaya geç
+                        // Buraya 500 ms'lik bir gecikme ekledim ki sunucuya ardışık çok hızlı istek gitmesin
+                        setTimeout(fetchNextRoom, 500);
+                    };
+                })
+                .catch(error => {
+                    console.error(`Error fetching room data for ${room.code}:`, error);
+                    // Fetch hatası durumunda bile bir sonraki odaya geç
+                    setTimeout(fetchNextRoom, 500);
+                });
+        }
+
         // Oyuncuları ve bulundukları odaları listeye ekle/güncelle
         function addPlayers(players, room) {
             players.forEach(player => {
-                // Oyuncunun adı null veya tanımsızsa, isimsiz bir oyuncu olduğunu varsayalım
                 const playerName = player.name && player.name.trim() !== '' ? player.name : 'İsimsiz Oyuncu';
                 if (!playersData[player.id]) {
                     playersData[player.id] = {
@@ -306,7 +317,7 @@
                     playersData[player.id].roomMaxPlayers = room.maxPlayers;
                 }
             });
-            filterUsers(); // Her yeni oyuncu geldiğinde filtrelemeyi tekrar çalıştır
+            filterUsers(); // Yeni veriler geldiğinde listeyi güncelle
         }
 
         // Kullanıcıları filtrele ve HTML'i güncelle
