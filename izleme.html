@@ -25,7 +25,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            min-height: 10vh; /* Daha kısa bir başlangıç yüksekliği */
             box-sizing: border-box;
         }
 
@@ -84,7 +84,9 @@
         }
 
         #language-select {
-            cursor: pointer;
+            cursor: default; /* Artık tek seçenek olduğu için varsayılan imleç */
+            pointer-events: none; /* Tıklanabilirliği kapat */
+            opacity: 0.7; /* Hafif soluk görünüm */
         }
 
         .filters {
@@ -152,6 +154,13 @@
             color: var(--primary-color);
         }
 
+        .status-message {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -171,19 +180,9 @@
         <h1>Gartic.io Oda Görüntüleyici</h1>
         <div class="search-container">
             <input type="text" id="username-search" placeholder="Oyuncu Adı ile Ara...">
-            <select id="language-select">
-                <option value="tr">Türkçe</option>
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-                <option value="it">Italiano</option>
-                <option value="ru">Русский</option>
-                <option value="ar">العربية</option>
-                <option value="jp">日本語</option>
-                <option value="cn">中文</option>
-                </select>
+            <select id="language-select" disabled>
+                <option value="8" selected>Türkçe</option>
+            </select>
         </div>
         <div class="filters">
             <div class="filter-item active" data-filter-type="all">Tümü</div>
@@ -192,113 +191,141 @@
             <div class="filter-item" data-filter-type="empty">Boş Odalar</div>
         </div>
         <div id="player-list">
-            <p id="loading-message">Odalar yükleniyor, lütfen bekleyin...</p>
+            <p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>
         </div>
+        <p id="status-info" class="status-message"></p>
     </div>
 
     <script>
-        const playersData = {}; // Global nesne, oyuncu ID'lerini ve bulundukları odaları saklamak için
+        const playersData = {};
         const playerListDiv = document.getElementById('player-list');
         const usernameSearchInput = document.getElementById('username-search');
-        const languageSelect = document.getElementById('language-select');
+        const languageSelect = document.getElementById('language-select'); // Hala referans tutuyoruz
         const filterItems = document.querySelectorAll('.filter-item');
+        const statusInfoElement = document.getElementById('status-info');
+
         let currentFilter = 'all';
-        let allRooms = []; // Tüm odaları saklayacak dizi
-        let currentRoomIndex = 0; // Şu an işlenen odanın indeksi
+        let allRooms = [];
+        let currentRoomIndex = 0;
+        let defaultDelay = 1500;
+        let minDelay = 1500;
+        let maxDelay = 10000;
+        let retryDelay = defaultDelay;
 
-        // Gartic.io API'sinden oda listesini çekme ve oyuncuları işleme
-        function fetchGarticRooms(lang = 'tr') {
-            playerListDiv.innerHTML = '<p id="loading-message">Odalar yükleniyor, lütfen bekleyin...</p>';
-            Object.keys(playersData).forEach(key => delete playersData[key]); // Önceki verileri temizle
-            allRooms = []; // Oda listesini sıfırla
-            currentRoomIndex = 0; // İndeksi sıfırla
+        function updateStatus(message) {
+            statusInfoElement.textContent = message;
+        }
 
+        function fetchGarticRooms() { // Parametre kaldırıldı, dil kodu sabit
+            playerListDiv.innerHTML = '<p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>';
+            Object.keys(playersData).forEach(key => delete playersData[key]);
+            allRooms = [];
+            currentRoomIndex = 0;
+            retryDelay = defaultDelay;
+            updateStatus('Oda listesi çekiliyor...');
+
+            // lang parametresi doğrudan '8' olarak ayarlandı
             fetch(`https://gartic.io/req/list?search=&language[]=8`)
-                .then(x => x.json())
+                .then(x => {
+                    if (!x.ok) {
+                        throw new Error(`HTTP error! status: ${x.status}`);
+                    }
+                    return x.json();
+                })
                 .then(rooms => {
                     if (rooms.length === 0) {
-                        playerListDiv.innerHTML = '<p>Bu dilde oda bulunamadı.</p>';
+                        playerListDiv.innerHTML = '<p class="status-message">Bu dilde (Türkçe) oda bulunamadı.</p>';
+                        updateStatus('Oda listesi çekildi: 0 oda bulundu.');
+                        const loadingMessage = document.getElementById('loading-message');
+                        if (loadingMessage) loadingMessage.remove();
                         return;
                     }
-                    allRooms = rooms; // Tüm odaları kaydet
-                    fetchNextRoom(); // İlk odayı işlemeye başla
+                    allRooms = rooms;
+                    updateStatus(`Oda listesi çekildi: ${allRooms.length} Türkçe oda bulundu. Odalar taranıyor...`);
+                    fetchNextRoom();
                 })
                 .catch(error => {
-                    console.error('Error fetching room list:', error);
-                    playerListDiv.innerHTML = '<p>Odalar yüklenirken bir hata oluştu.</p>';
+                    console.error('Oda listesi çekilirken hata oluştu:', error);
+                    playerListDiv.innerHTML = '<p class="status-message">Odalar yüklenirken bir hata oluştu.</p>';
+                    updateStatus(`Hata: Oda listesi çekilemedi. ${error.message}`);
                 });
         }
 
-        // Bir sonraki odayı işleyen fonksiyon
         function fetchNextRoom() {
             if (currentRoomIndex >= allRooms.length) {
-                filterUsers(); // Tüm odalar işlendikten sonra filtrelemeyi çalıştır
+                filterUsers();
                 if (Object.keys(playersData).length === 0) {
-                    playerListDiv.innerHTML = '<p>Hiç oyuncu bulunamadı.</p>';
+                    playerListDiv.innerHTML = '<p class="status-message">Hiç oyuncu bulunamadı.</p>';
                 } else {
                     const loadingMessage = document.getElementById('loading-message');
-                    if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
+                    if (loadingMessage) loadingMessage.remove();
                 }
+                updateStatus(`Tüm ${allRooms.length} Türkçe oda tarandı. Toplam ${Object.keys(playersData).length} oyuncu bulundu.`);
                 return;
             }
 
             const room = allRooms[currentRoomIndex];
-            currentRoomIndex++;
+            updateStatus(`Oda taranıyor: ${room.name} (${currentRoomIndex + 1}/${allRooms.length}). Son gecikme: ${retryDelay / 1000}s`);
 
-            // Odadaki oyuncu sayısı 0 ise ve boş oda göstermiyorsak atla
-            // Bu kontrolü kaldırdım çünkü oyuncu sayısı 0 olsa bile odaya bağlanıp gerçekten boş olup olmadığını kontrol etmek isteyebiliriz.
-            // if (currentFilter !== 'empty' && room.players === 0) {
-            //     fetchNextRoom(); // Anında bir sonraki odaya geç
-            //     return;
-            // }
-
-            fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
-                .then(x => x.text())
-                .then(x => {
-                    const roomSC = x.split("https://")[1].split(".")[0];
-                    let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
-
-                    ws.onopen = () => {
-                        ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
-                        ws.send('42[46,0]');
-                    }
-
-                    ws.onmessage = (msg) => {
-                        if (msg.data.indexOf('42["5"') !== -1) {
-                            try {
-                                const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
-                                const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
-                                addPlayers(playerInfo, room);
-                            } catch (e) {
-                                console.error("Player data parse error:", e);
-                            }
+            setTimeout(() => {
+                fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
+                    .then(x => {
+                        if (x.status === 429) {
+                            throw new Error('429 Too Many Requests - Çok fazla istek gönderildi.');
                         }
-                        ws.close(); // Mesajı aldıktan sonra WebSocket'i kapat
-                    }
+                        if (!x.ok) {
+                            throw new Error(`HTTP error! status: ${x.status} for room ${room.code}`);
+                        }
+                        return x.text();
+                    })
+                    .then(x => {
+                        retryDelay = defaultDelay;
 
-                    ws.onerror = (err) => {
-                        console.error(`WebSocket error for room ${room.code}:`, err);
-                        ws.close(); // Hata durumunda da kapat
-                    }
+                        const roomSC = x.split("https://")[1].split(".")[0];
+                        let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
 
-                    ws.onclose = () => {
-                        // WebSocket kapatıldığında (başarılı veya hatalı fark etmez) bir sonraki odaya geç
-                        // Buraya 500 ms'lik bir gecikme ekledim ki sunucuya ardışık çok hızlı istek gitmesin
-                        setTimeout(fetchNextRoom, 500);
-                    };
-                })
-                .catch(error => {
-                    console.error(`Error fetching room data for ${room.code}:`, error);
-                    // Fetch hatası durumunda bile bir sonraki odaya geç
-                    setTimeout(fetchNextRoom, 500);
-                });
+                        ws.onopen = () => {
+                            ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
+                            ws.send('42[46,0]');
+                        }
+
+                        ws.onmessage = (msg) => {
+                            if (msg.data.indexOf('42["5"') !== -1) {
+                                try {
+                                    const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
+                                    const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
+                                    addPlayers(playerInfo, room);
+                                } catch (e) {
+                                    console.error("Oyuncu verisi ayrıştırma hatası:", e, "Mesaj:", msg.data);
+                                }
+                            }
+                            ws.close();
+                        }
+
+                        ws.onerror = (err) => {
+                            console.warn(`WebSocket hatası (Oda ${room.code}):`, err);
+                            ws.close();
+                        }
+
+                        ws.onclose = () => {
+                            currentRoomIndex++;
+                            fetchNextRoom();
+                        };
+                    })
+                    .catch(error => {
+                        console.error(`Oda ${room.code} için veri çekilirken hata oluştu:`, error.message);
+                        retryDelay = Math.min(retryDelay * 1.5, maxDelay);
+                        currentRoomIndex++;
+                        updateStatus(`Hata! Oda ${room.name} (${room.code}) tararken problem. Bir sonraki oda ${retryDelay / 1000}s sonra denenecek.`);
+                        fetchNextRoom();
+                    });
+            }, retryDelay);
         }
 
-        // Oyuncuları ve bulundukları odaları listeye ekle/güncelle
         function addPlayers(players, room) {
             players.forEach(player => {
                 const playerName = player.name && player.name.trim() !== '' ? player.name : 'İsimsiz Oyuncu';
-                if (!playersData[player.id]) {
+                if (!playersData[player.id] || playersData[player.id].roomCode !== room.code) {
                     playersData[player.id] = {
                         name: playerName,
                         room: room.name,
@@ -309,35 +336,31 @@
                         roomCountry: room.country,
                         roomLanguage: room.language
                     };
-                } else {
-                    // Mevcutsa güncelle (oyuncu oda değiştirebilir)
-                    playersData[player.id].room = room.name;
-                    playersData[player.id].roomCode = room.code;
-                    playersData[player.id].roomPlayers = room.players;
-                    playersData[player.id].roomMaxPlayers = room.maxPlayers;
                 }
             });
-            filterUsers(); // Yeni veriler geldiğinde listeyi güncelle
+            filterUsers();
         }
 
-        // Kullanıcıları filtrele ve HTML'i güncelle
         function filterUsers() {
-            playerListDiv.innerHTML = ''; // Listeyi temizle
+            const loadingMessage = document.getElementById('loading-message');
+            playerListDiv.innerHTML = '';
+            if (loadingMessage) {
+                playerListDiv.appendChild(loadingMessage);
+            }
+
             const searchTerm = usernameSearchInput.value.toLowerCase();
             let foundPlayers = 0;
 
-            const uniqueRooms = {}; // Sadece bir kez eklenmiş odaları tutmak için
+            const uniqueRooms = {};
 
             for (const playerId in playersData) {
                 const player = playersData[playerId];
                 const playerNameLower = player.name.toLowerCase();
 
-                // Kullanıcı adına göre filtreleme
                 if (searchTerm && !playerNameLower.includes(searchTerm)) {
                     continue;
                 }
 
-                // Oda filtresi
                 let showPlayer = false;
                 if (currentFilter === 'all') {
                     showPlayer = true;
@@ -350,7 +373,6 @@
                 }
 
                 if (showPlayer) {
-                    // Aynı odayı birden fazla kez eklememek için kontrol
                     if (!uniqueRooms[player.roomCode]) {
                         const playerCard = document.createElement('div');
                         playerCard.classList.add('player-card');
@@ -366,21 +388,19 @@
                         `;
                         playerListDiv.appendChild(playerCard);
                         foundPlayers++;
-                        uniqueRooms[player.roomCode] = true; // Bu odayı eklendi olarak işaretle
+                        uniqueRooms[player.roomCode] = true;
                     }
                 }
             }
 
             if (foundPlayers === 0 && !document.getElementById('loading-message')) {
-                playerListDiv.innerHTML = '<p>Aradığınız kriterlere uygun oyuncu veya oda bulunamadı.</p>';
+                playerListDiv.innerHTML = '<p class="status-message">Aradığınız kriterlere uygun oyuncu veya oda bulunamadı.</p>';
             }
         }
 
-        // Olay dinleyicileri
         usernameSearchInput.addEventListener('input', filterUsers);
-        languageSelect.addEventListener('change', (e) => {
-            fetchGarticRooms(e.target.value);
-        });
+        // languageSelect.addEventListener kaldırıldı
+        // languageSelect'in kendisi artık "disabled" olduğu için change event'i de tetiklenmeyecektir.
 
         filterItems.forEach(item => {
             item.addEventListener('click', () => {
@@ -391,8 +411,8 @@
             });
         });
 
-        // Başlangıçta odaları yükle
-        fetchGarticRooms(languageSelect.value);
+        // Başlangıçta odaları yükle, artık languageSelect.value değil sabit '8' kullanılıyor
+        fetchGarticRooms();
     </script>
 </body>
 </html>
