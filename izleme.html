@@ -248,14 +248,14 @@
             margin-right: 10px;
         }
 
-        .user-details a {
-            color: var(--link-color); /* Linkler için yeni değişken */
+        .user-details .room-link { /* Yeni stil eklendi */
+            color: var(--link-color);
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.2s ease, text-decoration 0.2s ease;
         }
 
-        .user-details a:hover {
+        .user-details .room-link:hover {
             color: var(--link-hover-color);
             text-decoration: underline;
         }
@@ -620,9 +620,9 @@
                             <div class="user-details">
                                 <b>${user.nick}</b><br>
                                 <i>${user.pontos} pt</i><br>
-                                <a href="https://gartic.io/${roomlink}" target="_blank" rel="noopener noreferrer">Odaya Git</a>
+                                <a href="https://gartic.io/${roomlink}" target="_blank" rel="noopener noreferrer" class="room-link">${roomlink}</a>
                                 &nbsp;|&nbsp;
-                                <a href="https://gartic.io/${roomlink}/viewer" target="_blank" rel="noopener noreferrer">Odayı İzle</a><br>
+                                <a href="https://gartic.io/${roomlink}/viewer" target="_blank" rel="noopener noreferrer" class="room-link">${roomlink} izle</a><br>
                                 <div class="action-buttons">
                                     <button class="view-photo-btn" onclick="viewPhoto('${foto}')">Fotoğrafı Görüntüle</button>
                                     ${discordProfileButtonHTML}
@@ -722,7 +722,6 @@
             const users = fa(".user");
             const searchInput = f("#searchInput").value.toLowerCase();
             
-            // Mevcut filtre durumunu al
             const havefotoChecked = f("#havefotoCheckbox").checked;
             const nofotoChecked = f("#nofotoCheckbox").checked;
             const discordChecked = f("#discordCheckbox").checked;
@@ -737,7 +736,7 @@
 
                 let passesFilter = false;
                 if (!havefotoChecked && !nofotoChecked && !discordChecked) {
-                    passesFilter = true; // Hiçbir filtre seçili değilse her şeyi geçsin
+                    passesFilter = true;
                 } else if (havefotoChecked && hasPhoto) {
                     passesFilter = true;
                 } else if (nofotoChecked && noPhoto) {
@@ -746,7 +745,6 @@
                     passesFilter = true;
                 }
 
-                // Hem arama hem de filtre koşullarını sağlayanları göster
                 if (userName.includes(searchInput) && passesFilter) {
                     user.style.display = "flex";
                     visibleCount++;
