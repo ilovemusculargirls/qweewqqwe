@@ -26,6 +26,8 @@
             --input-bg: var(--secondary-bg);
             --input-border: var(--accent-color-blue);
             --input-placeholder: rgba(224, 224, 224, 0.7);
+            --link-color: var(--accent-color-blue); /* Linkler için genel renk */
+            --link-hover-color: #66b3ff;
         }
 
         body.light-theme {
@@ -45,6 +47,8 @@
             --input-bg: #fff;
             --input-border: #ccc;
             --input-placeholder: #888;
+            --link-color: #007bff;
+            --link-hover-color: #0056b3;
         }
 
         body {
@@ -67,7 +71,7 @@
             padding: 15px 25px;
             background-color: var(--secondary-bg);
             box-shadow: 0 4px 8px var(--shadow-color);
-            position: relative; /* Tema butonu için */
+            position: relative;
         }
 
         .header-info {
@@ -135,7 +139,7 @@
         }
 
         .filter-checkbox input[type="checkbox"]:checked::before {
-            content: '\2713'; /* Checkmark character */
+            content: '\2713';
             display: block;
             color: #fff;
             font-size: 14px;
@@ -189,7 +193,7 @@
             padding: 20px;
             font-size: 1.2rem;
             color: var(--text-color);
-            display: none; /* Varsayılan olarak gizli */
+            display: none;
         }
 
         .users-container {
@@ -211,7 +215,7 @@
             background-color: var(--card-bg);
             box-shadow: 0 5px 15px var(--shadow-color);
             transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
-            position: relative; /* Favori butonu için */
+            position: relative;
         }
 
         .user:hover {
@@ -245,14 +249,14 @@
         }
 
         .user-details a {
-            color: var(--accent-color-blue);
+            color: var(--link-color); /* Linkler için yeni değişken */
             text-decoration: none;
             font-size: 0.9rem;
-            transition: color 0.2s ease;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
         }
 
         .user-details a:hover {
-            color: #66b3ff;
+            color: var(--link-hover-color);
             text-decoration: underline;
         }
 
@@ -264,8 +268,7 @@
         }
 
         .view-photo-btn,
-        .discord-profile-btn,
-        .room-button { /* Yeni buton sınıfı */
+        .discord-profile-btn {
             padding: 8px 15px;
             font-size: 0.9rem;
             cursor: pointer;
@@ -294,21 +297,6 @@
             transform: translateY(-1px);
         }
 
-        .room-button.go-to-room {
-            background-color: #28a745; /* Yeşil */
-        }
-        .room-button.go-to-room:hover {
-            background-color: #218838;
-        }
-
-        .room-button.watch-room {
-            background-color: #ffc107; /* Sarı */
-            color: #333; /* Sarı üzerinde koyu yazı */
-        }
-        .room-button.watch-room:hover {
-            background-color: #e0a800;
-        }
-
         /* Favori Butonu */
         .favorite-btn {
             position: absolute;
@@ -318,17 +306,17 @@
             border: none;
             font-size: 1.3rem;
             cursor: pointer;
-            color: #ccc; /* Varsayılan gri */
+            color: #ccc;
             transition: color 0.2s ease, transform 0.1s ease;
         }
 
         .favorite-btn:hover {
-            color: #fdd835; /* Sarımsı */
+            color: #fdd835;
             transform: scale(1.1);
         }
 
         .favorite-btn.favorited {
-            color: #ffeb3b; /* Favori ise parlak sarı */
+            color: #ffeb3b;
         }
 
         /* Profile Modal */
@@ -402,7 +390,7 @@
             transition: color 0.3s ease;
         }
 
-        /* Advertisement Bar - GIF kaldırıldığı için sadece yazı kalacak */
+        /* Advertisement Bar */
         #advertisementBar {
             position: fixed;
             bottom: 0;
@@ -441,7 +429,7 @@
             }
 
             .theme-toggle {
-                position: static; /* Mobil görünümde sağ üstten ayrılır */
+                position: static;
                 margin-top: 10px;
             }
 
@@ -523,7 +511,8 @@
         </div>
 
         <button class="theme-toggle" id="themeToggle">
-            <i class="fas fa-sun"></i> </button>
+            <i class="fas fa-sun"></i>
+        </button>
 
         <div class="filter-checkboxes">
             <div class="filter-checkbox">
@@ -576,9 +565,8 @@
         const fa = (selector) => document.querySelectorAll(selector);
 
         let totalPlayerCount = 0;
-        let favoriteUsers = JSON.parse(localStorage.getItem('favoriteUsers')) || []; // Favori kullanıcıları localStorage'dan yükle
+        let favoriteUsers = JSON.parse(localStorage.getItem('favoriteUsers')) || [];
 
-        // Tema ayarını localStorage'dan yükle
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             if (savedTheme === 'light') {
@@ -619,10 +607,9 @@
                     ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
                     : '';
 
-                // Kullanıcı zaten listede var mı kontrol et
-                if (!f(`#user-${user.id}`)) { // Her kullanıcıya benzersiz bir ID verelim
+                if (!f(`#user-${user.id}`)) {
                     totalPlayerCount++;
-                    const isFavorited = favoriteUsers.includes(user.id); // Favori kontrolü
+                    const isFavorited = favoriteUsers.includes(user.id);
 
                     usersContainer.innerHTML += `
                         <div class="user ${uclass} ${discordClass}" id="user-${user.id}">
@@ -632,23 +619,23 @@
                             <img src="${foto}" alt="${user.nick}'ın fotoğrafı">
                             <div class="user-details">
                                 <b>${user.nick}</b><br>
-                                <i>${user.pontos} pt</i>&nbsp;&nbsp;
+                                <i>${user.pontos} pt</i><br>
+                                <a href="https://gartic.io/${roomlink}" target="_blank" rel="noopener noreferrer">Odaya Git</a>
+                                &nbsp;|&nbsp;
+                                <a href="https://gartic.io/${roomlink}/viewer" target="_blank" rel="noopener noreferrer">Odayı İzle</a><br>
                                 <div class="action-buttons">
                                     <button class="view-photo-btn" onclick="viewPhoto('${foto}')">Fotoğrafı Görüntüle</button>
                                     ${discordProfileButtonHTML}
-                                    <a href="https://gartic.io/${roomlink}" target="_blank" rel="noopener noreferrer" class="room-button go-to-room">Odaya Git</a>
-                                    <a href="https://gartic.io/${roomlink}/viewer" target="_blank" rel="noopener noreferrer" class="room-button watch-room">Odayı İzle</a>
                                 </div>
                             </div>
                         </div>
                     `;
                 }
             });
-            updateTotalPlayerCount(totalPlayerCount); // Toplam bulunan kullanıcı sayısını güncelle
-            filterUsers(); // Filtreleri tekrar uygulayarak görünen sayıyı güncelle
+            updateTotalPlayerCount(totalPlayerCount);
+            filterUsers();
         }
 
-        // Fotoğrafı yeni sekmede açan fonksiyon
         function viewPhoto(photoURL) {
             window.open(photoURL, '_blank', 'noopener,noreferrer');
         }
@@ -702,7 +689,9 @@
             nofotoCheckbox.disabled = havefotoCheckbox.checked || discordCheckbox.checked;
             discordCheckbox.disabled = havefotoCheckbox.checked || nofotoCheckbox.checked;
 
+            let shouldShowAnyFilter = havefotoCheckbox.checked || nofotoCheckbox.checked || discordCheckbox.checked;
             let visibleCount = 0;
+
             users.forEach(user => {
                 const hasPhoto = user.classList.contains("havefoto");
                 const noPhoto = user.classList.contains("nofoto");
@@ -710,7 +699,7 @@
 
                 let shouldShow = false;
 
-                if (!havefotoCheckbox.checked && !nofotoCheckbox.checked && !discordCheckbox.checked) {
+                if (!shouldShowAnyFilter) {
                     shouldShow = true;
                 } else if (havefotoCheckbox.checked && hasPhoto) {
                     shouldShow = true;
@@ -732,14 +721,33 @@
         function searchUsers() {
             const users = fa(".user");
             const searchInput = f("#searchInput").value.toLowerCase();
+            
+            // Mevcut filtre durumunu al
+            const havefotoChecked = f("#havefotoCheckbox").checked;
+            const nofotoChecked = f("#nofotoCheckbox").checked;
+            const discordChecked = f("#discordCheckbox").checked;
+
             let visibleCount = 0;
 
             users.forEach(user => {
                 const userName = user.querySelector("b").textContent.toLowerCase();
-                // Checkbox filtrelerinden gizlenmemişse veya arama kutusu boşsa göster
-                const isFilteredByCheckbox = user.style.display !== "none" || (f("#havefotoCheckbox").checked || f("#nofotoCheckbox").checked || f("#discordCheckbox").checked);
-                
-                if (userName.includes(searchInput) && isFilteredByCheckbox) {
+                const hasPhoto = user.classList.contains("havefoto");
+                const noPhoto = user.classList.contains("nofoto");
+                const isDiscord = user.classList.contains("discord");
+
+                let passesFilter = false;
+                if (!havefotoChecked && !nofotoChecked && !discordChecked) {
+                    passesFilter = true; // Hiçbir filtre seçili değilse her şeyi geçsin
+                } else if (havefotoChecked && hasPhoto) {
+                    passesFilter = true;
+                } else if (nofotoChecked && noPhoto) {
+                    passesFilter = true;
+                } else if (discordChecked && isDiscord) {
+                    passesFilter = true;
+                }
+
+                // Hem arama hem de filtre koşullarını sağlayanları göster
+                if (userName.includes(searchInput) && passesFilter) {
                     user.style.display = "flex";
                     visibleCount++;
                 } else {
@@ -757,9 +765,9 @@
             usersContainer.innerHTML = "";
             totalPlayerCount = 0;
             updateTotalPlayerCount(0);
-            updatePlayerCount(0); // Listelenen sayıyı da sıfırla
+            updatePlayerCount(0);
 
-            loadingIndicator.style.display = 'block'; // Yükleniyor göstergesini aç
+            loadingIndicator.style.display = 'block';
 
             fetch(`https://gartic.io/req/list?search=&language[]=${lang}`)
                 .then(x => x.json())
@@ -767,7 +775,7 @@
                     let index = 0;
                     const fetchNextRoom = () => {
                         if (index >= rooms.length) {
-                            loadingIndicator.style.display = 'none'; // Tüm odalar yüklendiğinde göstergeyi kapat
+                            loadingIndicator.style.display = 'none';
                             return;
                         }
 
@@ -802,11 +810,10 @@
                 })
                 .catch(error => {
                     console.error('Oda listesi çekilirken hata oluştu:', error);
-                    loadingIndicator.style.display = 'none'; // Hata durumunda da göstergeyi kapat
+                    loadingIndicator.style.display = 'none';
                 });
         }
         
-        // Tema değiştirme fonksiyonu
         function toggleTheme() {
             document.body.classList.toggle('light-theme');
             const isLight = document.body.classList.contains('light-theme');
@@ -820,27 +827,23 @@
             }
         }
 
-        // Favori ekleme/kaldırma fonksiyonu
         function toggleFavorite(userId) {
             const userElement = f(`#user-${userId}`);
             const favoriteBtn = userElement.querySelector('.favorite-btn');
             const starIcon = favoriteBtn.querySelector('i');
 
             if (favoriteUsers.includes(userId)) {
-                // Zaten favori ise kaldır
                 favoriteUsers = favoriteUsers.filter(id => id !== userId);
                 favoriteBtn.classList.remove('favorited');
-                starIcon.classList.replace('fas', 'far'); // Dolu yıldızdan boş yıldıza
+                starIcon.classList.replace('fas', 'far');
             } else {
-                // Favori değilse ekle
                 favoriteUsers.push(userId);
                 favoriteBtn.classList.add('favorited');
-                starIcon.classList.replace('far', 'fas'); // Boş yıldızdan dolu yıldıza
+                starIcon.classList.replace('far', 'fas');
             }
-            localStorage.setItem('favoriteUsers', JSON.stringify(favoriteUsers)); // localStorage'ı güncelle
+            localStorage.setItem('favoriteUsers', JSON.stringify(favoriteUsers));
         }
 
-        // Tema değiştirme butonuna olay dinleyici ekle
         f('#themeToggle').addEventListener('click', toggleTheme);
 
         listusers(8); 
