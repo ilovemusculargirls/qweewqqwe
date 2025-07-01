@@ -28,7 +28,7 @@
             --input-placeholder: rgba(224, 224, 224, 0.7);
             --link-color: var(--accent-color-blue);
             --link-hover-color: #66b3ff;
-            --refresh-btn-bg: #28a745; /* Yenile butonu rengi */
+            --refresh-btn-bg: #28a745;
             --refresh-btn-hover: #218838;
         }
 
@@ -93,20 +93,20 @@
 
         .header-actions {
             display: flex;
-            gap: 15px; /* Butonlar ve tema değiştirme arasındaki boşluk */
+            gap: 15px;
             align-items: center;
-            margin-left: auto; /* Sağ tarafa hizala */
+            margin-left: auto;
         }
 
         .theme-toggle,
-        .refresh-button { /* Yenile butonu için de stil eklendi */
+        .refresh-button {
             background: none;
             border: none;
             color: var(--text-color);
             font-size: 1.5rem;
             cursor: pointer;
             transition: color 0.2s ease, transform 0.2s ease;
-            padding: 0; /* padding'i sıfırla */
+            padding: 0;
         }
 
         .refresh-button {
@@ -225,11 +225,13 @@
 
         .users-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Eski değere döndürüldü */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
-            padding: 30px;
-            max-width: 1200px;
-            margin: 20px auto;
+            padding: 30px; /* Kenarlardan bırakılacak boşluk */
+            margin: 20px auto; /* Ortalamak için, ancak tam genişlikte bu çok etkili olmayacak */
+            width: calc(100% - 60px); /* 30px soldan 30px sağdan padding için genişliği ayarla */
+            box-sizing: border-box; /* padding'in genişliği etkilememesi için */
+            /* max-width kaldırıldı, böylece ekranın tamamına yayılabilir */
         }
 
         .user {
@@ -475,7 +477,8 @@
             }
 
             .users-container {
-                padding: 20px;
+                padding: 20px; /* Küçük ekranlarda padding'i azaltabiliriz */
+                width: calc(100% - 40px); /* 20px soldan 20px sağdan padding için genişliği ayarla */
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
 
@@ -512,6 +515,7 @@
             .users-container {
                 padding: 10px;
                 gap: 15px;
+                width: calc(100% - 20px); /* 10px soldan 10px sağdan padding için genişliği ayarla */
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
             .user {
@@ -720,6 +724,7 @@
 
         function filterUsers() {
             const users = fa(".user");
+            const searchInput = f("#searchInput").value.toLowerCase();
             const havefotoCheckbox = f("#havefotoCheckbox");
             const nofotoCheckbox = f("#nofotoCheckbox");
             const discordCheckbox = f("#discordCheckbox");
@@ -732,58 +737,22 @@
             let visibleCount = 0;
 
             users.forEach(user => {
-                const hasPhoto = user.classList.contains("havefoto");
-                const noPhoto = user.classList.contains("nofoto");
-                const isDiscord = user.classList.contains("discord");
-
-                let shouldShow = false;
-
-                if (!shouldShowAnyFilter) {
-                    shouldShow = true;
-                } else if (havefotoCheckbox.checked && hasPhoto) {
-                    shouldShow = true;
-                } else if (nofotoCheckbox.checked && noPhoto) {
-                    shouldShow = true;
-                } else if (discordCheckbox.checked && isDiscord) {
-                    shouldShow = true;
-                }
-                
-                user.style.display = shouldShow ? "flex" : "none";
-                if (shouldShow) {
-                    visibleCount++;
-                }
-            });
-
-            updatePlayerCount(visibleCount);
-        }
-
-        function searchUsers() {
-            const users = fa(".user");
-            const searchInput = f("#searchInput").value.toLowerCase();
-            
-            const havefotoChecked = f("#havefotoCheckbox").checked;
-            const nofotoChecked = f("#nofotoCheckbox").checked;
-            const discordChecked = f("#discordCheckbox").checked;
-
-            let visibleCount = 0;
-
-            users.forEach(user => {
                 const userName = user.querySelector("b").textContent.toLowerCase();
                 const hasPhoto = user.classList.contains("havefoto");
                 const noPhoto = user.classList.contains("nofoto");
                 const isDiscord = user.classList.contains("discord");
 
                 let passesFilter = false;
-                if (!havefotoChecked && !nofotoChecked && !discordChecked) {
+                if (!shouldShowAnyFilter) {
                     passesFilter = true;
-                } else if (havefotoChecked && hasPhoto) {
+                } else if (havefotoCheckbox.checked && hasPhoto) {
                     passesFilter = true;
-                } else if (nofotoChecked && noPhoto) {
+                } else if (nofotoCheckbox.checked && noPhoto) {
                     passesFilter = true;
-                } else if (discordChecked && isDiscord) {
+                } else if (discordCheckbox.checked && isDiscord) {
                     passesFilter = true;
                 }
-
+                
                 if (userName.includes(searchInput) && passesFilter) {
                     user.style.display = "flex";
                     visibleCount++;
@@ -794,21 +763,24 @@
 
             updatePlayerCount(visibleCount);
         }
+
+        function searchUsers() {
+            filterUsers();
+        }
         
         function listusers(lang) {
             const usersContainer = f("#usersContainer");
             const loadingIndicator = f("#loadingIndicator");
 
-            usersContainer.innerHTML = ""; // Listeyi temizle
+            usersContainer.innerHTML = "";
             totalPlayerCount = 0;
             updateTotalPlayerCount(0);
             updatePlayerCount(0);
-            f("#searchInput").value = ""; // Arama kutusunu temizle
-            // Filtre kutularını sıfırla
+            f("#searchInput").value = "";
             f("#havefotoCheckbox").checked = false;
             f("#nofotoCheckbox").checked = false;
             f("#discordCheckbox").checked = false;
-            filterUsers(); // Filtreleri uygula (hepsi pasif kalacak)
+            filterUsers();
 
             loadingIndicator.style.display = 'block';
 
@@ -845,8 +817,7 @@
                             })
                             .catch(error => console.error(`Oda verileri çekilirken hata oluştu ${room.code}:`, error))
                             .finally(() => {
-                                // setTimeout(fetchNextRoom, 2000); // Bu satırı kaldırdık, anında yükleme için
-                                fetchNextRoom(); // Bir sonraki odayı hemen çek
+                                fetchNextRoom(); 
                             });
                     };
 
@@ -889,9 +860,7 @@
         }
 
         f('#themeToggle').addEventListener('click', toggleTheme);
-        f('#refreshButton').addEventListener('click', () => listusers(currentLanguage)); // Yenile butonuna olay dinleyici eklendi
-
-        // İlk yüklemede ve yenilemede filtrelerin ve arama çubuğunun sıfırlanması için listusers fonksiyonunda bu işlemler yapıldı.
+        f('#refreshButton').addEventListener('click', () => listusers(currentLanguage));
     </script>
 </body>
 </html>
