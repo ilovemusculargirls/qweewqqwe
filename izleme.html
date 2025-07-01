@@ -200,7 +200,7 @@
         const playersData = {};
         const playerListDiv = document.getElementById('player-list');
         const usernameSearchInput = document.getElementById('username-search');
-        const languageSelect = document.getElementById('language-select'); // Hala referans tutuyoruz
+        const languageSelect = document.getElementById('language-select');
         const filterItems = document.querySelectorAll('.filter-item');
         const statusInfoElement = document.getElementById('status-info');
 
@@ -216,7 +216,7 @@
             statusInfoElement.textContent = message;
         }
 
-        function fetchGarticRooms() { // Parametre kaldırıldı, dil kodu sabit
+        function fetchGarticRooms() {
             playerListDiv.innerHTML = '<p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>';
             Object.keys(playersData).forEach(key => delete playersData[key]);
             allRooms = [];
@@ -224,7 +224,6 @@
             retryDelay = defaultDelay;
             updateStatus('Oda listesi çekiliyor...');
 
-            // lang parametresi doğrudan '8' olarak ayarlandı
             fetch(`https://gartic.io/req/list?search=&language[]=8`)
                 .then(x => {
                     if (!x.ok) {
@@ -279,7 +278,7 @@
                         return x.text();
                     })
                     .then(x => {
-                        retryDelay = defaultDelay;
+                        retryDelay = defaultDelay; // Başarılı istek, gecikmeyi sıfırla
 
                         const roomSC = x.split("https://")[1].split(".")[0];
                         let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
@@ -287,6 +286,12 @@
                         ws.onopen = () => {
                             ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
                             ws.send('42[46,0]');
+                            // WebSocket'i 1 saniye sonra kapatmak için zamanlayıcı
+                            setTimeout(() => {
+                                if (ws.readyState === WebSocket.OPEN) {
+                                    ws.close();
+                                }
+                            }, 1000); // 1 saniye bekle
                         }
 
                         ws.onmessage = (msg) => {
@@ -299,15 +304,18 @@
                                     console.error("Oyuncu verisi ayrıştırma hatası:", e, "Mesaj:", msg.data);
                                 }
                             }
-                            ws.close();
+                            // ws.close() burada çağrılmıyor, setTimeout ile kapatılacak
                         }
 
                         ws.onerror = (err) => {
                             console.warn(`WebSocket hatası (Oda ${room.code}):`, err);
-                            ws.close();
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.close(); // Hata durumunda da kapat
+                            }
                         }
 
                         ws.onclose = () => {
+                            // Bağlantı kapandığında bir sonraki odaya geç
                             currentRoomIndex++;
                             fetchNextRoom();
                         };
@@ -399,9 +407,6 @@
         }
 
         usernameSearchInput.addEventListener('input', filterUsers);
-        // languageSelect.addEventListener kaldırıldı
-        // languageSelect'in kendisi artık "disabled" olduğu için change event'i de tetiklenmeyecektir.
-
         filterItems.forEach(item => {
             item.addEventListener('click', () => {
                 filterItems.forEach(btn => btn.classList.remove('active'));
@@ -411,7 +416,6 @@
             });
         });
 
-        // Başlangıçta odaları yükle, artık languageSelect.value değil sabit '8' kullanılıyor
         fetchGarticRooms();
     </script>
 </body>
