@@ -24,10 +24,9 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-            background-image: url('https://i.pinimg.com/originals/35/dd/54/35dd549d2db3db16dd15c09cec685fb3.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            /* Arka plan görseli yerine degrade renk */
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            background-attachment: fixed; /* Arka planın sabit kalmasını sağlar */
             color: var(--text-color);
             line-height: 1.6;
         }
@@ -210,7 +209,7 @@
             gap: 10px;
         }
 
-        .download-btn,
+        .view-photo-btn, /* İndir butonunun yeni sınıf adı */
         .discord-profile-btn {
             padding: 8px 15px;
             font-size: 0.9rem;
@@ -221,12 +220,12 @@
             transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
-        .download-btn {
+        .view-photo-btn {
             background-color: var(--accent-color-blue);
             color: #fff;
         }
 
-        .download-btn:hover {
+        .view-photo-btn:hover {
             background-color: #0056b3;
             transform: translateY(-1px);
         }
@@ -461,14 +460,14 @@
             <img id="profileImage" alt="Profil Fotoğrafı">
             <p id="profileName"></p>
             <div class="action-buttons">
-                <a id="downloadLink" class="download-btn" download="profile_photo.png" target="_blank">Fotoğrafı İndir</a>
-                <a id="discordProfileBtn" class="discord-profile-btn" target="_blank" rel="noopener noreferrer">Discord Profili</a>
+                <a id="viewPhotoLink" class="view-photo-btn" target="_blank" rel="noopener noreferrer">Fotoğrafı Görüntüle</a>
+                <button id="discordProfileBtn" class="discord-profile-btn" onclick="">Discord Profili</button>
             </div>
         </div>
     </div>
 
     <div id="advertisementBar">
-        <img id="advertisementGif" src="https://example.com/your-ad-gif.gif" alt="Reklam GIFi"> <span id="advertisementText">Discord: garou#0001 - En güncel kullanıcı listesi için bizi takip edin!</span>
+        <img id="advertisementGif" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHY5MWp1ZXU4N3hvdGlqMThkYW5lOGt4ajR0bTltMThkdjQ4M3V4cyZlcD1WMV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kgytE5iO0fPz0L2Pnf/giphy.gif" alt="Reklam GIFi"> <span id="advertisementText">Discord: garou#0001 - En güncel kullanıcı listesi için bizi takip edin!</span>
     </div>
 
     <script>
@@ -517,7 +516,7 @@
                                 <i>${user.pontos} pt</i>&nbsp;&nbsp;
                                 <a target="_blank" href="https://gartic.io/${roomlink}">#${roomlink}</a><br>
                                 <div class="action-buttons">
-                                    <button class="download-btn" onclick="downloadPhoto('${foto}', '${user.nick}')">Fotoğrafı İndir</button>
+                                    <button class="view-photo-btn" onclick="viewPhoto('${foto}')">Fotoğrafı Görüntüle</button>
                                     ${discordProfileButtonHTML}
                                 </div>
                             </div>
@@ -529,9 +528,14 @@
             filterUsers(); // Filtreleri tekrar uygulayarak görünen sayıyı güncelle
         }
 
+        // Fotoğrafı yeni sekmede açan fonksiyon
+        function viewPhoto(photoURL) {
+            window.open(photoURL, '_blank', 'noopener,noreferrer');
+        }
+
         function openDiscordProfile(discordID) {
             if (discordID) {
-                window.open(`https://discordlookup.com/user/${discordID}`, '_blank');
+                window.open(`https://discordlookup.com/user/${discordID}`, '_blank', 'noopener,noreferrer');
             } else {
                 console.warn("Discord ID bulunamadı.");
             }
@@ -542,15 +546,16 @@
             const profileTitle = f("#profileTitle");
             const profileImage = f("#profileImage");
             const profileName = f("#profileName");
-            const downloadLink = f("#downloadLink");
+            const viewPhotoLink = f("#viewPhotoLink"); // Yeni buton
             const discordProfileBtn = f("#discordProfileBtn");
 
             profileTitle.textContent = `Profil: ${nick}`;
             profileImage.src = foto;
             profileImage.alt = `${nick}'ın Profil Fotoğrafı`;
             profileName.textContent = `Kullanıcı Adı: ${nick}`;
-            downloadLink.href = foto;
-            downloadLink.download = `${nick}_photo.png`;
+            
+            // Fotoğrafı Görüntüle butonu için URL'yi ayarla
+            viewPhotoLink.href = foto;
 
             const isDiscordUser = foto.includes("cdn.discordapp.com");
             const discordID = isDiscordUser ? extractDiscordID(foto) : null;
@@ -566,15 +571,6 @@
 
         function closeProfile() {
             f("#profileContainer").style.display = 'none';
-        }
-
-        function downloadPhoto(photoURL, userName) {
-            const downloadLink = document.createElement('a');
-            downloadLink.href = photoURL;
-            downloadLink.download = `${userName}_photo.png`;
-            document.body.appendChild(downloadLink); // Firefox için gerekli olabilir
-            downloadLink.click();
-            document.body.removeChild(downloadLink); // Temizlik
         }
 
         function filterUsers() {
@@ -635,10 +631,6 @@
             updatePlayerCount(visibleCount);
         }
         
-        // Bu kısmı, dinamik olarak gelen kullanıcıları yönetmek için değiştirdim.
-        // Aynı kullanıcının birden fazla kez eklenmesini önlemek için basit bir kontrol eklendi.
-        // Ayrıca, toplam kullanıcı sayısını daha doğru takip etmek için addPlayers içinde artırıyorum.
-        // websocket bağlantısı ve veri çekme mantığı değiştirilmedi.
         function listusers(lang) {
             const usersContainer = f("#usersContainer");
             usersContainer.innerHTML = ""; // Yeni listeleme öncesi container'ı temizle
@@ -691,7 +683,7 @@
         // Reklam GIF'i için bir URL belirleyin (örneğin, boş bir placeholder)
         document.addEventListener('DOMContentLoaded', () => {
             const advertisementGif = f("#advertisementGif");
-            advertisementGif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHY5MWp1ZXU4N3hvdGlqMThkYW5lOGt4ajR0bTltMThkdjQ4M3V4cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kgytE5iO0fPz0L2Pnf/giphy.gif"; // Buraya kendi GIF'inizin URL'sini koyun
+            advertisementGif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHY5MWp1ZXU4N3hvdGlqMThkYW5lOGt4ajR0bTltMThkdjQ4M3V4cyZlcD1WMV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kgytE5iO0fPz0L2Pnf/giphy.gif"; // Buraya kendi GIF'inizin URL'sini koyun
         });
     </script>
 </body>
