@@ -681,7 +681,6 @@
             const usersContainer = f("#usersContainer");
             usersContainer.innerHTML = ""; // Mevcut tüm kullanıcıları temizle
 
-            let visibleCount = 0;
             usersToRender.forEach(user => {
                 const foto = user.foto || `https://gartic.io/static/images/avatar/svg/${user.avatar}.svg`;
                 const uclass = user.foto ? "havefoto" : "nofoto";
@@ -693,14 +692,21 @@
                     ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
                     : '';
 
-                const isFavorited = favoriteUsers.includes(user.id);
+                // user.id'nin geçerli bir sayı olduğundan emin olalım
+                // Eğer user.id tanımsız, null veya geçerli bir sayı değilse, favori butonu için tıklama olayını devre dışı bırak.
+                const isFavoritable = typeof user.id === 'number'; // user.id'nin number tipinde olduğunu kontrol et
+                const favoriteButtonHTML = isFavoritable
+                    ? `<button class="favorite-btn ${favoriteUsers.includes(user.id) ? 'favorited' : ''}" onclick="toggleFavorite(${user.id})">
+                          <i class="${favoriteUsers.includes(user.id) ? 'fas' : 'far'} fa-star"></i>
+                       </button>`
+                    : `<button class="favorite-btn disabled" disabled title="Bu kullanıcı favorilenemez">
+                          <i class="far fa-star"></i>
+                       </button>`; // Butonu devre dışı bırak ve stilini ayarla
 
                 // Kullanıcı HTML'ini oluştur
                 const userHTML = `
                     <div class="user ${uclass} ${discordClass}" id="user-${user.id}" data-user-id="${user.id}">
-                        <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${user.id})">
-                            <i class="${isFavorited ? 'fas' : 'far'} fa-star"></i>
-                        </button>
+                        ${favoriteButtonHTML}
                         <img src="${foto}" alt="${user.nick}'ın fotoğrafı">
                         <div class="user-details">
                             <b>${user.nick}</b><br>
@@ -716,16 +722,18 @@
                     </div>
                 `;
                 usersContainer.innerHTML += userHTML;
-                visibleCount++; // Bu kısım aslında render edilen tüm kullanıcıları sayar
             });
-            updatePlayerCount(visibleCount); // Sadece filtrelenmiş kullanıcıları saydırmak için `filterUsers` çağırılacak.
+            // renderUsers sonrası filtreleme otomatik çağrılacak.
         }
 
         function addPlayers(users, roomlink) {
             users.forEach(user => {
-                // Sadece daha önce eklenmemiş kullanıcıları ekle
-                if (!allUsersData.some(existingUser => existingUser.id === user.id)) {
+                // Sadece daha önce eklenmemiş ve geçerli bir ID'si olan kullanıcıları ekle
+                // user.id'nin sayı olduğundan emin olalım
+                if (typeof user.id === 'number' && !allUsersData.some(existingUser => existingUser.id === user.id)) {
                     allUsersData.push({ ...user, roomlink: roomlink });
+                } else if (typeof user.id !== 'number') {
+                    console.warn(`Geçersiz kullanıcı ID'si bulunan kullanıcı atlandı:`, user);
                 }
             });
             // Kullanıcı verileri eklendikten sonra listeyi yeniden sırala ve render et
@@ -744,12 +752,49 @@
             favoritedUsers.sort((a, b) => favoriteUsers.indexOf(a.id) - favoriteUsers.indexOf(b.id));
 
             // Favori olmayan kullanıcıları puana göre (veya başka bir kritere göre) sıralayabiliriz
-            nonFavoritedUsers.sort((a, b) => b.pontos - a.pontos); // Örneğin, puana göre azalan
+            // Yeni gelenler en sona eklenecekse, bu sıralamayı kaldırıp `nonFavoritedUsers`'ı olduğu gibi bırakabiliriz
+            // Veya sadece puanları aynı olanları eklenme sırasına göre sıralarız.
+            // Örneğin, puana göre azalan, eğer puanlar aynıysa eklenme sırasına göre (mevcut halleriyle)
+            nonFavoritedUsers.sort((a, b) => b.pontos - a.pontos); 
+            // Eğer yeni eklenenleri en alta atmak istiyorsak, sadece favorileri başa alırız:
+            // let sortedUsers = [...favoritedUsers, ...nonFavoritedUsers]; // Eski davranış buydu
+            
+            // Yeni eklenenleri en alta atmak için basitçe favorileri listeler, sonra diğerlerini olduğu gibi ekleriz.
+            // Bu, sıralamayı sadece favoriler için yapar, diğerlerini eklenme sırasına göre korur.
+            const sortedUsers = [];
+            
+            // Favori kullanıcıları ekle
+            sortedUsers.push(...favoritedUsers);
 
-            // Favori kullanıcıları en başa koy, sonra favori olmayanları ekle
-            const sortedUsers = [...favoritedUsers, ...nonFavoritedUsers];
+            // Favori olmayan kullanıcıları (orijinal `allUsersData`'daki sıralarına göre) ekle
+            // Bu kısım biraz daha karmaşık olabilir, çünkü `allUsersData` zaten yeni eklenenleri sona atıyor.
+            // En basiti, favori olmayanları olduğu gibi eklemek, `sort` kullanmadan.
+            // Ancak, mevcut `nonFavoritedUsers.sort` hala puana göre sıralıyor.
+            // Eğer "yeni eklenenler en sona" kuralı mutlak ise, `nonFavoritedUsers`'ı sıralamamalıyız.
+            // Şu anki durumda `allUsersData`'ya ekleme sırası doğal olarak yeni gelenleri sona atar.
+            // Bu nedenle sadece favori olmayanları filtreleyip olduğu gibi eklemek yeterli.
+            
+            // Mevcut `allUsersData` dizisini orijinal eklenme sırasına göre korumak en mantıklısı.
+            // Tekrar baştan oluşturmak yerine:
+            const finalSortedList = [];
+            const favIds = new Set(favoriteUsers); // Set ile favori ID'lerine hızlı erişim
+            
+            // Favori kullanıcıları listeye ekle (favoriIds sırasına göre)
+            favoriteUsers.forEach(favId => {
+                const user = allUsersData.find(u => u.id === favId);
+                if (user) {
+                    finalSortedList.push(user);
+                }
+            });
 
-            renderUsers(sortedUsers); // Sıralanmış listeyi render et
+            // Favori olmayan kullanıcıları listeye ekle (orijinal allUsersData sırasına göre)
+            allUsersData.forEach(user => {
+                if (!favIds.has(user.id)) {
+                    finalSortedList.push(user);
+                }
+            });
+
+            renderUsers(finalSortedList); // Sıralanmış listeyi render et
             filterUsers(); // Filtreleri tekrar uygula (arama çubuğu vb.)
         }
 
@@ -810,7 +855,7 @@
             let shouldShowAnyFilter = havefotoCheckbox.checked || nofotoCheckbox.checked || discordCheckbox.checked;
             let visibleCount = 0;
 
-            users.forEach(userElement => { // userElement olarak değiştirdim, global user ile karışmasın
+            users.forEach(userElement => { 
                 const userName = userElement.querySelector("b").textContent.toLowerCase();
                 const hasPhoto = userElement.classList.contains("havefoto");
                 const noPhoto = userElement.classList.contains("nofoto");
@@ -901,6 +946,7 @@
                                     ws.close();
                                     reject(new Error(`WebSocket bağlantısı veya veri alımı zaman aşımına uğradı (${WS_TIMEOUT_MS}ms) for room ${room.code}.`));
                                 }
+                                wsResolved = true; // Timeout durumunda da resolve/reject edilmiş sayılır.
                             }, WS_TIMEOUT_MS);
 
                             ws.onopen = () => {
@@ -923,12 +969,14 @@
                                 if (!wsResolved) {
                                     console.error(`[${room.code}] WebSocket hatası:`, error);
                                     clearTimeout(timeout);
+                                    wsResolved = true; // Hata durumunda da resolve/reject edilmiş sayılır.
                                     reject(new Error(`[${room.code}] WebSocket error: ${error.message || 'Bilinmeyen hata'}`)); 
                                 }
                             };
 
                             ws.onclose = () => {
                                 if (!wsResolved) { 
+                                    wsResolved = true; // Bağlantı kapandığında da resolve/reject edilmiş sayılır.
                                     reject(new Error(`[${room.code}] WebSocket bağlantısı beklenmedik şekilde kapandı veya veri alınamadı.`));
                                 }
                             };
@@ -947,6 +995,7 @@
                 loadingIndicator.style.display = 'none';
                 refreshButton.disabled = false;
                 isProcessingRooms = false; // İşlem bitti olarak işaretle
+                sortAndRenderUsers(); // Tüm veriler yüklendikten sonra son kez sırala ve göster
             }
         }
         
@@ -964,6 +1013,12 @@
         }
 
         function toggleFavorite(userId) {
+            // userId'nin geçerli bir sayı olduğundan emin olalım
+            if (typeof userId !== 'number' || isNaN(userId)) {
+                console.error("Geçersiz kullanıcı ID'si, favorilere eklenemiyor:", userId);
+                return;
+            }
+
             if (favoriteUsers.includes(userId)) {
                 favoriteUsers = favoriteUsers.filter(id => id !== userId);
             } else {
