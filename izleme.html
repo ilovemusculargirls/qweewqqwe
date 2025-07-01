@@ -219,6 +219,37 @@
             border-color: #66b3ff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
         }
+        
+        /* Yeni eklenen buton için CSS */
+        .search-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background-color: var(--accent-color-blue);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 10px; /* Arama kutusu ile arasında boşluk bırakmak için */
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px var(--shadow-color);
+        }
+
+        .search-button:hover {
+            background-color: var(--button-hover-darken);
+            transform: translateY(-1px);
+        }
+
+        /* Açık tema için arama butonu stili */
+        body.light-theme .search-button {
+            background-color: var(--light-button-bg);
+            color: var(--light-button-text);
+            border: 1px solid var(--light-button-border);
+        }
+
+        body.light-theme .search-button:hover {
+            background-color: var(--light-button-hover-bg);
+            border-color: var(--light-button-hover-bg);
+        }
 
         .loading-indicator {
             text-align: center;
@@ -508,6 +539,16 @@
 
             .search-container {
                 padding: 15px 0;
+                flex-direction: column; /* Mobil cihazlarda alt alta sırala */
+                align-items: center;
+                gap: 10px; /* Elementler arası boşluk */
+            }
+            .search-input {
+                width: 90%; /* Genişliği ayarla */
+            }
+            .search-button {
+                width: 90%; /* Butonun genişliğini ayarla */
+                margin-left: 0; /* Ortalamak için sıfırla */
             }
 
             .users-container {
@@ -609,7 +650,7 @@
 
     <div class="search-container">
         <input type="text" class="search-input" id="searchInput" onkeyup="searchUsers()" placeholder="Kullanıcı Ara...">
-    </div>
+        <button class="search-button" onclick="searchUsers()">Bul</button> </div>
 
     <div class="loading-indicator" id="loadingIndicator">
         <i class="fas fa-spinner fa-spin"></i> Kullanıcılar yükleniyor...
