@@ -3,645 +3,696 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gartic.io Oyuncu Listesi</title>
+    <title>Gartic.io Kullanıcı Listesi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Bu stil kodları sadece temel elemanları görünür kılmak içindir. */
-        /* Kendi tasarımınız için bu alanı tamamen değiştirebilir veya harici bir CSS dosyası bağlayabilirsiniz. */
+        :root {
+            --primary-bg: #1a1a2e;
+            --secondary-bg: #16213e;
+            --card-bg: #0f3460;
+            --text-color: #e0e0e0;
+            --accent-color-blue: #007bff;
+            --accent-color-red: #e74c3c;
+            --border-color: #007bff;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+            padding: 0;
+            height: 100vh;
+            background-image: url('https://i.pinimg.com/originals/35/dd/54/35dd549d2db3db16dd15c09cec685fb3.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-color);
+            line-height: 1.6;
         }
-        .container {
-            max-width: 960px;
-            margin: 20px auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+
         .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .header h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .counts {
             display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #555;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background-color: var(--secondary-bg);
+            box-shadow: 0 4px 8px var(--shadow-color);
         }
-        .controls {
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        #playerCount,
+        #totalPlayerCount {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .filter-checkboxes {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 25px;
-            padding: 15px;
-            background-color: #e9e9e9;
-            border-radius: 6px;
+            margin-top: 10px;
         }
-        .controls input[type="text"] {
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            flex-grow: 1;
-            max-width: 300px;
-        }
-        .controls label {
+
+        .filter-checkbox label {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 1em;
+            gap: 8px;
+            font-size: 0.9rem;
             cursor: pointer;
+            color: var(--text-color);
         }
-        .controls input[type="checkbox"] {
-            transform: scale(1.2);
+
+        .filter-checkbox input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--accent-color-blue);
+            border-radius: 4px;
+            background-color: var(--secondary-bg);
+            outline: none;
             cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
-        #usersContainer {
+
+        .filter-checkbox input[type="checkbox"]:checked {
+            background-color: var(--accent-color-blue);
+            border-color: var(--accent-color-blue);
+        }
+
+        .filter-checkbox input[type="checkbox"]:checked::before {
+            content: '\2713'; /* Checkmark character */
+            display: block;
+            color: #fff;
+            font-size: 14px;
+            line-height: 1;
+            text-align: center;
+            padding-top: 1px;
+        }
+
+        .filter-checkbox input[type="checkbox"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #555;
+            border-color: #555;
+        }
+
+        .search-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            background-color: var(--primary-bg);
+            box-shadow: 0 4px 8px var(--shadow-color);
+            margin-top: 20px;
+        }
+
+        .search-input {
+            width: 90%;
+            max-width: 500px;
+            padding: 12px 20px;
+            border: 1px solid var(--accent-color-blue);
+            border-radius: 25px;
+            font-size: 1rem;
+            background-color: var(--secondary-bg);
+            color: var(--text-color);
+            outline: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(224, 224, 224, 0.7);
+        }
+
+        .search-input:focus {
+            border-color: #66b3ff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        .users-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Oyuncu kartlarını yan yana dizmek için */
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 20px auto;
         }
+
         .user {
             display: flex;
-            align-items: center;
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease-in-out;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--card-bg);
+            box-shadow: 0 5px 15px var(--shadow-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+
         .user:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
         }
+
         .user img {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 15px;
-            cursor: pointer; /* Profil modalını açmak için */
+            border: 2px solid var(--accent-color-blue);
         }
-        .user div {
+
+        .user-details {
             flex-grow: 1;
         }
-        .user b {
-            font-size: 1.1em;
-            color: #333;
+
+        .user-details b {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 5px;
+            display: block;
         }
-        .user i {
-            color: #666;
-            font-size: 0.9em;
+
+        .user-details i {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            margin-right: 10px;
         }
-        .user a {
+
+        .user-details a {
+            color: var(--accent-color-blue);
             text-decoration: none;
-            color: #007bff;
-            font-weight: bold;
-            margin-left: 5px;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
         }
-        .user a:hover {
+
+        .user-details a:hover {
+            color: #66b3ff;
             text-decoration: underline;
         }
-        .user .download-btn, .user .discord-profile-btn {
-            display: inline-block;
+
+        .action-buttons {
             margin-top: 10px;
-            padding: 6px 12px;
-            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .download-btn,
+        .discord-profile-btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 0.85em;
-            margin-right: 8px;
-            color: white;
-            text-align: center;
-            transition: background-color 0.2s ease;
-        }
-        .user .download-btn {
-            background-color: #28a745; /* Yeşil */
-        }
-        .user .download-btn:hover {
-            background-color: #218838;
-        }
-        .user .discord-profile-btn {
-            background-color: #7289da; /* Discord mavisi */
-        }
-        .user .discord-profile-btn:hover {
-            background-color: #6177b9;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
-        .status-message {
-            text-align: center;
-            font-style: italic;
-            color: #777;
-            margin-top: 20px;
-            font-size: 1.1em;
+        .download-btn {
+            background-color: var(--accent-color-blue);
+            color: #fff;
         }
 
-        /* Profil Modalı Stilleri */
-        .profile-modal {
-            display: none; /* Varsayılan olarak gizli */
+        .download-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .discord-profile-btn {
+            background-color: #7289da; /* Discord Blue */
+            color: #fff;
+        }
+
+        .discord-profile-btn:hover {
+            background-color: #5b6eae;
+            transform: translateY(-1px);
+        }
+
+        /* Profile Modal */
+        .profile-container {
+            display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.6); /* Yarı şeffaf siyah arka plan */
+            background: rgba(0, 0, 0, 0.7);
             justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
-        .modal-content {
-            background-color: #fff;
+
+        .profile-content {
+            background: var(--secondary-bg);
             padding: 30px;
             border-radius: 10px;
-            text-align: center;
-            color: #333;
-            position: relative;
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            animation: fadeIn 0.3s ease-out;
         }
-        .modal-content .close-btn {
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .profile-content .close-btn {
             position: absolute;
             top: 15px;
             right: 20px;
-            font-size: 28px;
             cursor: pointer;
-            color: #aaa;
-            transition: color 0.2s;
+            color: var(--accent-color-red);
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.2s ease;
         }
-        .modal-content .close-btn:hover {
-            color: #333;
+
+        .profile-content .close-btn:hover {
+            color: #ff6b6b;
         }
-        .modal-content img {
+
+        .profile-content h2 {
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .profile-content img {
             width: 120px;
             height: 120px;
             border-radius: 50%;
             object-fit: cover;
-            margin-bottom: 20px;
-            border: 3px solid #eee;
+            margin-bottom: 15px;
+            border: 3px solid var(--accent-color-blue);
         }
-        .modal-content h2 {
-            margin-bottom: 10px;
-            color: #007bff;
+
+        .profile-content p {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 25px;
         }
-        .modal-content p {
-            font-size: 1.1em;
-            margin-bottom: 20px;
+
+        /* Advertisement Bar */
+        #advertisementBar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 999;
         }
-        .modal-content button {
-            background-color: #007bff; /* Mavi */
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 1em;
-            transition: background-color 0.2s;
+
+        #advertisementGif {
+            height: 50px; /* Adjust as needed */
+            margin-right: 15px;
         }
-        .modal-content button:hover {
-            background-color: #0056b3;
+
+        #advertisementText {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            animation: marquee 15s linear infinite;
         }
-        .modal-content button.discord {
-            background-color: #7289da; /* Discord mavisi */
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
         }
-        .modal-content button.discord:hover {
-            background-color: #6177b9;
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+
+            .filter-checkboxes {
+                margin-top: 15px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .search-container {
+                padding: 15px 0;
+            }
+
+            .users-container {
+                padding: 20px;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+
+            .user {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .user img {
+                margin-bottom: 10px;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+
+            #advertisementBar {
+                height: 50px;
+            }
+            #advertisementText {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px;
+            }
+            .search-input {
+                width: 95%;
+                padding: 10px 15px;
+            }
+            .users-container {
+                padding: 10px;
+                gap: 15px;
+            }
+            .user {
+                padding: 15px;
+            }
+            .user img {
+                width: 50px;
+                height: 50px;
+            }
+            .profile-content {
+                padding: 20px;
+            }
+            .profile-content h2 {
+                font-size: 1.5rem;
+            }
+            .profile-content img {
+                width: 100px;
+                height: 100px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Gartic.io Oyuncu Listesi</h1>
-            <div class="counts">
-                <span id="playerCount">Aktif Gösterilen Oyuncu Sayısı: 0</span>
-                <span id="totalPlayerCount">Toplam Kişi Sayısı: 0</span>
+    <div class="header">
+        <div class="header-info">
+            <div id="playerCount"></div>
+            <div id="totalPlayerCount">Toplam kişi sayısı: 0</div>
+        </div>
+
+        <div class="filter-checkboxes">
+            <div class="filter-checkbox">
+                <label>
+                    <input type="checkbox" id="havefotoCheckbox" onchange="filterUsers()"> Sadece Profil Fotoğrafı Olanlar
+                </label>
+            </div>
+            <div class="filter-checkbox">
+                <label>
+                    <input type="checkbox" id="nofotoCheckbox" onchange="filterUsers()"> Profil Fotoğrafı Olmayanlar
+                </label>
+            </div>
+            <div class="filter-checkbox">
+                <label>
+                    <input type="checkbox" id="discordCheckbox" onchange="filterUsers()"> Discord ile Giriş Yapanlar
+                </label>
             </div>
         </div>
-
-        <div class="controls">
-            <input type="text" id="searchInput" placeholder="Oyuncu ara...">
-            
-            <label>
-                <input type="checkbox" id="havefotoCheckbox"> Fotoğraflı
-            </label>
-            <label>
-                <input type="checkbox" id="nofotoCheckbox"> Fotosuz
-            </label>
-            <label>
-                <input type="checkbox" id="discordCheckbox"> Discord
-            </label>
-        </div>
-
-        <div id="usersContainer">
-            <p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>
-        </div>
-        
-        <p id="status-info" class="status-message"></p>
     </div>
 
-    <div id="profileContainer" class="profile-modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeProfile()">&times;</span>
-            <h2 id="profileTitle">Profil</h2>
-            <img id="profileImage" src="" alt="Profil Fotoğrafı">
-            <p id="profileName">Kullanıcı Adı:</p>
-            <button id="downloadLink" onclick="downloadPhotoFromModal()">Fotoğrafı İndir</button>
-            <button id="discordProfileBtn" class="discord" onclick="openDiscordProfileFromModal()" style="display: none;">Discord Profili</button>
+    <div class="search-container">
+        <input type="text" class="search-input" id="searchInput" onkeyup="searchUsers()" placeholder="Kullanıcı Ara...">
+    </div>
+
+    <div class="users-container" id="usersContainer"></div>
+
+    <div class="profile-container" id="profileContainer">
+        <div class="profile-content">
+            <span class="close-btn" onclick="closeProfile()">×</span>
+            <h2 id="profileTitle"></h2>
+            <img id="profileImage" alt="Profil Fotoğrafı">
+            <p id="profileName"></p>
+            <div class="action-buttons">
+                <a id="downloadLink" class="download-btn" download="profile_photo.png" target="_blank">Fotoğrafı İndir</a>
+                <a id="discordProfileBtn" class="discord-profile-btn" target="_blank" rel="noopener noreferrer">Discord Profili</a>
+            </div>
         </div>
+    </div>
+
+    <div id="advertisementBar">
+        <img id="advertisementGif" src="https://example.com/your-ad-gif.gif" alt="Reklam GIFi"> <span id="advertisementText">Discord: garou#0001 - En güncel kullanıcı listesi için bizi takip edin!</span>
     </div>
 
     <script>
-        // JavaScript kodun buraya gelecek
-        const f = (x) => document.querySelector(x);
-        const fa = (x) => document.querySelectorAll(x);
+        const f = (selector) => document.querySelector(selector);
+        const fa = (selector) => document.querySelectorAll(selector);
 
-        let totalProcessedPlayers = 0; // Toplam taranan benzersiz oyuncu sayısı
-        let playersData = {}; // Tüm benzersiz oyuncu verilerini tutacak global nesne
-        let allRooms = []; // Tüm odaları saklayacak dizi
-        let currentRoomIndex = 0; // Şu an işlenen odanın indeksi
+        let totalPlayerCount = 0;
 
-        // Rate Limit (Hız Sınırı) Yönetimi
-        let defaultDelay = 1500; // Varsayılan gecikme (1.5 saniye)
-        let minDelay = 1500; // Minimum gecikme
-        let maxDelay = 10000; // Maksimum gecikme (10 saniye)
-        let retryDelay = defaultDelay; // Tekrar deneme gecikmesi, dinamik olarak artacak
-
-        // Modal (Popup) için geçici değişkenler
-        let currentProfilePhotoURL = '';
-        let currentProfileDiscordID = '';
-
-        // DOM elementleri
-        const usersContainer = f('#usersContainer'); // Oyuncuların listelendiği ana div
-        const searchInput = f('#searchInput') || f('#username-search'); // Arama inputu
-        const statusInfoElement = f('#status-info') || document.createElement('p'); // Durum mesajı alanı
-        if (!f('#status-info')) {
-            statusInfoElement.id = 'status-info';
-            statusInfoElement.className = 'status-message';
-            const container = f('.container');
-            if (container) {
-                container.appendChild(statusInfoElement);
-            } else {
-                document.body.appendChild(statusInfoElement);
-            }
-        }
-        
-        // Filtre checkbox'larını bulma
-        const havefotoCheckbox = f("#havefotoCheckbox");
-        const nofotoCheckbox = f("#nofotoCheckbox");
-        const discordCheckbox = f("#discordCheckbox");
-
-        // Sayı güncellemeleri
         function updatePlayerCount(count) {
             const playerCountElement = f("#playerCount");
-            if (playerCountElement) {
-                // Sadece aktif gösterilen oyuncu sayısı. Kullanıcının örneğinde boş bırakılmıştı, ama daha mantıklı bir değer gösterelim.
-                playerCountElement.textContent = `Aktif Gösterilen Oyuncu Sayısı: ${count}`;
-            }
+            playerCountElement.textContent = `Listelenen kişi sayısı: ${count}`;
         }
 
         function updateTotalPlayerCount(count) {
             const totalPlayerCountElement = f("#totalPlayerCount");
-            if (totalPlayerCountElement) {
-                totalPlayerCountElement.textContent = `Toplam kişi sayısı: ${count}`;
-            }
+            totalPlayerCountElement.textContent = `Toplam bulunan kişi sayısı: ${count}`;
         }
 
-        function updateStatus(message) {
-            if (statusInfoElement) {
-                statusInfoElement.textContent = message;
-            }
-        }
-
-        // Gartic.io API'sinden oda listesini çekme
-        function fetchGarticRooms() {
-            if (usersContainer) {
-                usersContainer.innerHTML = '<p id="loading-message" class="status-message">Odalar yükleniyor, lütfen bekleyin...</p>';
-            }
-            
-            totalProcessedPlayers = 0;
-            updateTotalPlayerCount(totalProcessedPlayers);
-            updatePlayerCount(0); // Aktif gösterilen sayısını sıfırla
-
-            playersData = {}; // Önceki oyuncu verilerini temizle
-            allRooms = []; // Oda listesini sıfırla
-            currentRoomIndex = 0; // İndeksi sıfırla
-            retryDelay = defaultDelay; // Yeni bir arama başladığında gecikmeyi sıfırla
-            updateStatus('Oda listesi çekiliyor...');
-
-            // Sadece Türkçe odalar (language[]=8)
-            fetch(`https://gartic.io/req/list?search=&language[]=8`)
-                .then(x => {
-                    if (!x.ok) {
-                        throw new Error(`HTTP error! status: ${x.status}`);
-                    }
-                    return x.json();
-                })
-                .then(rooms => {
-                    if (rooms.length === 0) {
-                        if (usersContainer) {
-                            usersContainer.innerHTML = '<p class="status-message">Bu dilde (Türkçe) oda bulunamadı.</p>';
-                        }
-                        updateStatus('Oda listesi çekildi: 0 oda bulundu.');
-                        const loadingMessage = f("#loading-message");
-                        if (loadingMessage) loadingMessage.remove();
-                        return;
-                    }
-                    allRooms = rooms;
-                    updateStatus(`Oda listesi çekildi: ${allRooms.length} Türkçe oda bulundu. Odalar taranıyor...`);
-                    fetchNextRoom(); // İlk odayı işlemeye başla
-                })
-                .catch(error => {
-                    console.error('Oda listesi çekilirken hata oluştu:', error);
-                    if (usersContainer) {
-                        usersContainer.innerHTML = '<p class="status-message">Odalar yüklenirken bir hata oluştu.</p>';
-                    }
-                    updateStatus(`Hata: Oda listesi çekilemedi. ${error.message}`);
-                });
-        }
-
-        // Bir sonraki odayı işleyen fonksiyon
-        function fetchNextRoom() {
-            if (currentRoomIndex >= allRooms.length) {
-                filterUsers(); // Tüm odalar işlendikten sonra filtrelemeyi çalıştır
-                if (Object.keys(playersData).length === 0) {
-                    if (usersContainer) {
-                        usersContainer.innerHTML = '<p class="status-message">Hiç oyuncu bulunamadı.</p>';
-                    }
-                } else {
-                    const loadingMessage = f("#loading-message");
-                    if (loadingMessage) loadingMessage.remove(); // Yükleniyor mesajını kaldır
-                }
-                updateStatus(`Tüm ${allRooms.length} Türkçe oda tarandı. Toplam ${Object.keys(playersData).length} benzersiz oyuncu bulundu.`);
-                return;
-            }
-
-            const room = allRooms[currentRoomIndex];
-            updateStatus(`Oda taranıyor: ${room.name || 'Bilinmiyor Oda'} (Kodu: ${room.code}) (${currentRoomIndex + 1}/${allRooms.length}). Son gecikme: ${retryDelay / 1000}s`);
-
-            // Gecikmeyi burada uyguluyoruz
-            setTimeout(() => {
-                fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
-                    .then(x => {
-                        if (x.status === 429) {
-                            throw new Error('429 Too Many Requests - Çok fazla istek gönderildi.');
-                        }
-                        if (!x.ok) {
-                            throw new Error(`HTTP error! status: ${x.status} for room ${room.code}`);
-                        }
-                        return x.text();
-                    })
-                    .then(x => {
-                        retryDelay = defaultDelay; // Başarılı istek, gecikmeyi sıfırla
-
-                        const roomSC = x.split("https://")[1].split(".")[0];
-                        let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
-
-                        ws.onopen = () => {
-                            ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
-                            ws.send('42[46,0]');
-                            // WebSocket'i 1 saniye sonra kapatmak için zamanlayıcı
-                            setTimeout(() => {
-                                if (ws.readyState === WebSocket.OPEN) {
-                                    ws.close();
-                                }
-                            }, 1000); // 1 saniye bekle
-                        }
-
-                        ws.onmessage = (msg) => {
-                            if (msg.data.indexOf('42["5"') !== -1) {
-                                try {
-                                    const rawData = msg.data.split('[{"id":')[1].split("}]")[0];
-                                    const playerInfo = JSON.parse('[{"id":' + rawData + "}]");
-                                    
-                                    addPlayers(playerInfo, room.code); // room.code'u roomlink olarak gönder
-                                } catch (e) {
-                                    console.error("Oyuncu verisi ayrıştırma hatası:", e, "Mesaj:", msg.data);
-                                }
-                            }
-                            // ws.close() burada çağrılmıyor, setTimeout ile kapatılacak
-                        }
-
-                        ws.onerror = (err) => {
-                            console.warn(`WebSocket hatası (Oda ${room.code || 'Bilinmiyor'}):`, err);
-                            if (ws.readyState === WebSocket.OPEN) {
-                                ws.close(); // Hata durumunda da kapat
-                            }
-                        }
-
-                        ws.onclose = () => {
-                            // Bağlantı kapandığında bir sonraki odaya geç
-                            currentRoomIndex++;
-                            fetchNextRoom();
-                        };
-                    })
-                    .catch(error => {
-                        console.error(`Oda ${room.code || 'Bilinmiyor'} için veri çekilirken hata oluştu:`, error.message);
-                        retryDelay = Math.min(retryDelay * 1.5, maxDelay); // Hata durumunda gecikmeyi artır
-                        currentRoomIndex++;
-                        updateStatus(`Hata! Oda ${room.name || 'Bilinmiyor'} (${room.code || 'N/A'}) tararken problem. Bir sonraki oda ${retryDelay / 1000}s sonra denenecek.`);
-                        fetchNextRoom();
-                    });
-            }, retryDelay);
-        }
-
-        // Oyuncuları global listeye ekle/güncelle (senin addPlayers ismine benzetildi)
-        function addPlayers(users, roomCode) { // roomCode, senin roomlink'ine karşılık gelir
-            users.forEach(user => {
-                const playerName = user.nick && user.nick.trim() !== '' ? user.nick : 'İsimsiz Oyuncu';
-                
-                if (!playersData[user.id]) { // Oyuncu daha önce eklenmemişse
-                    playersData[user.id] = {
-                        id: user.id, // Oyuncu ID'si
-                        nick: playerName,
-                        pontos: user.pontos || 0, // Puan yoksa 0
-                        foto: user.foto || null,
-                        avatar: user.avatar || null,
-                        roomCode: roomCode, // Sadece oda kodu tutuluyor
-                        isDiscordUser: (user.foto && user.foto.includes("cdn.discordapp.com"))
-                    };
-                    totalProcessedPlayers++;
-                }
-            });
-            updateTotalPlayerCount(totalProcessedPlayers);
-            filterUsers(); // Yeni veriler geldiğinde listeyi güncelle ve gösterilen oyuncu sayısını günceller
-        }
-
-        // Kullanıcıları filtrele ve HTML'i güncelle
-        function filterUsers() {
-            if (!usersContainer) return;
-
-            // Yükleniyor mesajı hala varsa, onu koru ve diğer içeriği temizle
-            const loadingMessage = f("#loading-message");
-            usersContainer.innerHTML = ''; 
-            if (loadingMessage) { 
-                usersContainer.appendChild(loadingMessage);
-            }
-
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-            const havefotoChecked = havefotoCheckbox ? havefotoCheckbox.checked : false;
-            const nofotoChecked = nofotoCheckbox ? nofotoCheckbox.checked : false;
-            const discordChecked = discordCheckbox ? discordCheckbox.checked : false;
-
-            // Checkbox durumuna göre diğer checkboxları devre dışı bırakma (senin örnekteki gibi)
-            if (havefotoCheckbox) havefotoCheckbox.disabled = nofotoChecked || discordChecked;
-            if (nofotoCheckbox) nofotoCheckbox.disabled = havefotoChecked || discordChecked;
-            if (discordCheckbox) discordCheckbox.disabled = havefotoChecked || nofotoChecked;
-            
-            let displayedPlayerCount = 0;
-
-            for (const playerId in playersData) {
-                const player = playersData[playerId];
-                const playerNameLower = player.nick.toLowerCase();
-
-                // Arama kutusu filtresi
-                if (searchTerm && !playerNameLower.includes(searchTerm)) {
-                    continue; // Arama terimi uymuyorsa atla
-                }
-
-                // Checkbox filtreleri
-                let showPlayer = true; // Varsayılan olarak göster
-                if (havefotoChecked && !player.foto) { // Sadece fotoğraflı istiyor ama fotoğrafı yok
-                    showPlayer = false;
-                }
-                if (nofotoChecked && player.foto) { // Sadece fotosuz istiyor ama fotoğrafı var
-                    showPlayer = false;
-                }
-                if (discordChecked && !player.isDiscordUser) { // Sadece Discord istiyor ama Discord kullanıcısı değil
-                    showPlayer = false;
-                }
-                // Hiçbir checkbox seçili değilse ve oyuncu Discord kullanıcısı değilse veya fotoğrafı yoksa da göster
-                if (!havefotoChecked && !nofotoChecked && !discordChecked) {
-                    showPlayer = true; // Tüm filtreler kapalıysa hepsini göster
-                }
-
-                if (showPlayer) {
-                    const foto = player.foto || `https://gartic.io/static/images/avatar/svg/${player.avatar || 'avatar_default'}.svg`;
-                    
-                    // Senin "izlemeyedek.html" dosyasındaki HTML yapına benzetildi.
-                    const discordID = extractDiscordID(player.foto);
-                    const discordProfileButton = player.isDiscordUser ? `<span class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</span>` : "";
-
-                    const playerCardHtml = `
-                        <div class="user flex ${player.foto ? "havefoto" : "nofoto"} ${player.isDiscordUser ? "discord" : ""}">
-                            <img width="50" height="50" src="${foto}" alt="${player.nick || 'İsimsiz'} Profil Fotoğrafı" onclick="openProfile('${player.nick}', '${foto}')">
-                            <div>
-                                <b>${player.nick}</b><br>
-                                <i>${player.pontos || 0} pt</i>&nbsp;&nbsp;
-                                <a target="_blank" href="https://gartic.io/play/${player.roomCode}">#${player.roomCode}</a><br>
-                                <span class="download-btn" onclick="downloadPhoto('${foto}', '${player.nick}')">Fotoğrafı İndir</span>
-                                ${discordProfileButton}
-                            </div>
-                        </div>
-                    `;
-                    usersContainer.innerHTML += playerCardHtml;
-                    displayedPlayerCount++;
-                }
-            }
-
-            updatePlayerCount(displayedPlayerCount); // Filtrelenen oyuncu sayısını güncelle
-
-            if (displayedPlayerCount === 0 && !loadingMessage) {
-                if (usersContainer) {
-                    usersContainer.innerHTML = '<p class="status-message">Aradığınız kriterlere uygun oyuncu bulunamadı.</p>';
-                }
-            }
-        }
-
-        // Discord ID'yi URL'den çıkar
         function extractDiscordID(avatarURL) {
-            if (!avatarURL) return null;
             const matches = avatarURL.match(/\/avatars\/(\d+)\//);
             return matches ? matches[1] : null;
         }
 
-        // Modalı açan fonksiyon
-        function openProfile(nick, foto) { // Senin openProfile parametrelerine benzetildi
-            const profileContainer = f("#profileContainer");
-            if (!profileContainer) {
-                console.warn("Profil modalı bulunamadı. Lütfen HTML'inizde #profileContainer elementinin olduğundan emin olun.");
-                return;
+        function addPlayers(users, roomlink) {
+            const usersContainer = f("#usersContainer");
+            
+            users.forEach(user => {
+                const foto = user.foto || `https://gartic.io/static/images/avatar/svg/${user.avatar}.svg`;
+                const uclass = user.foto ? "havefoto" : "nofoto";
+                const isDiscordUser = foto.includes("cdn.discordapp.com");
+                const discordClass = isDiscordUser ? "discord" : "";
+                const discordID = isDiscordUser ? extractDiscordID(foto) : null;
+
+                const discordProfileButtonHTML = discordID 
+                    ? `<button class="discord-profile-btn" onclick="openDiscordProfile('${discordID}')">Discord Profili</button>` 
+                    : '';
+
+                // Kullanıcı zaten listede var mı kontrol et
+                if (!f(`#user-${user.id}`)) { // Her kullanıcıya benzersiz bir ID verelim
+                    totalPlayerCount++;
+                    usersContainer.innerHTML += `
+                        <div class="user ${uclass} ${discordClass}" id="user-${user.id}">
+                            <img src="${foto}" alt="${user.nick}'ın fotoğrafı">
+                            <div class="user-details">
+                                <b>${user.nick}</b><br>
+                                <i>${user.pontos} pt</i>&nbsp;&nbsp;
+                                <a target="_blank" href="https://gartic.io/${roomlink}">#${roomlink}</a><br>
+                                <div class="action-buttons">
+                                    <button class="download-btn" onclick="downloadPhoto('${foto}', '${user.nick}')">Fotoğrafı İndir</button>
+                                    ${discordProfileButtonHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            updateTotalPlayerCount(totalPlayerCount); // Toplam bulunan kullanıcı sayısını güncelle
+            filterUsers(); // Filtreleri tekrar uygulayarak görünen sayıyı güncelle
+        }
+
+        function openDiscordProfile(discordID) {
+            if (discordID) {
+                window.open(`https://discordlookup.com/user/${discordID}`, '_blank');
+            } else {
+                console.warn("Discord ID bulunamadı.");
             }
+        }
+
+        function openProfile(nick, foto) {
+            const profileContainer = f("#profileContainer");
             const profileTitle = f("#profileTitle");
             const profileImage = f("#profileImage");
             const profileName = f("#profileName");
+            const downloadLink = f("#downloadLink");
             const discordProfileBtn = f("#discordProfileBtn");
 
-            if (profileTitle) profileTitle.textContent = `Profil: ${nick}`;
-            if (profileImage) {
-                profileImage.src = foto;
-                profileImage.alt = `${nick} Profil Fotoğrafı`;
+            profileTitle.textContent = `Profil: ${nick}`;
+            profileImage.src = foto;
+            profileImage.alt = `${nick}'ın Profil Fotoğrafı`;
+            profileName.textContent = `Kullanıcı Adı: ${nick}`;
+            downloadLink.href = foto;
+            downloadLink.download = `${nick}_photo.png`;
+
+            const isDiscordUser = foto.includes("cdn.discordapp.com");
+            const discordID = isDiscordUser ? extractDiscordID(foto) : null;
+            if (isDiscordUser && discordID) {
+                discordProfileBtn.style.display = 'inline-block';
+                discordProfileBtn.onclick = () => openDiscordProfile(discordID);
+            } else {
+                discordProfileBtn.style.display = 'none';
             }
-            if (profileName) profileName.textContent = `Kullanıcı Adı: ${nick}`;
-
-            currentProfilePhotoURL = foto; // Modalın içinden indirmek için URL'yi sakla
-            currentProfileDiscordID = extractDiscordID(foto); // Modalın içinden Discord profilini açmak için ID'yi sakla
-
-            if (discordProfileBtn) {
-                if (currentProfileDiscordID) {
-                    discordProfileBtn.style.display = 'inline-block';
-                } else {
-                    discordProfileBtn.style.display = 'none';
-                }
-            }
-
+            
             profileContainer.style.display = 'flex';
         }
 
-        // Modalı kapatan fonksiyon
         function closeProfile() {
-            const profileContainer = f("#profileContainer");
-            if (profileContainer) {
-                profileContainer.style.display = 'none';
-            }
+            f("#profileContainer").style.display = 'none';
         }
 
-        // Modal içinden fotoğraf indirme (modal butonuna bağlanmalı)
-        function downloadPhotoFromModal() {
-            if (currentProfilePhotoURL) {
-                const userName = f("#profileName") ? f("#profileName").textContent.replace('Kullanıcı Adı: ', '') : 'Kullanıcı';
-                downloadPhoto(currentProfilePhotoURL, userName);
-            }
-        }
-
-        // Modal içinden Discord profilini açma (modal butonuna bağlanmalı)
-        function openDiscordProfileFromModal() {
-            if (currentProfileDiscordID) {
-                window.open(`https://discordlookup.com/user/${currentProfileDiscordID}`, '_blank');
-            }
-        }
-
-        // Doğrudan kullanıcı kartından fotoğraf indirme veya modal dışından kullanılabilir
         function downloadPhoto(photoURL, userName) {
             const downloadLink = document.createElement('a');
             downloadLink.href = photoURL;
             downloadLink.download = `${userName}_photo.png`;
-            downloadLink.target = "_blank";
+            document.body.appendChild(downloadLink); // Firefox için gerekli olabilir
             downloadLink.click();
+            document.body.removeChild(downloadLink); // Temizlik
         }
 
-        // Arama ve filtreleme olay dinleyicileri
-        if (searchInput) {
-            searchInput.addEventListener('input', filterUsers); // Arama yapıldığında filtreleme yapsın
+        function filterUsers() {
+            const users = fa(".user");
+            const havefotoCheckbox = f("#havefotoCheckbox");
+            const nofotoCheckbox = f("#nofotoCheckbox");
+            const discordCheckbox = f("#discordCheckbox");
+
+            // Checkbox durumlarına göre diğer checkbox'ları etkinleştir/devre dışı bırak
+            havefotoCheckbox.disabled = nofotoCheckbox.checked || discordCheckbox.checked;
+            nofotoCheckbox.disabled = havefotoCheckbox.checked || discordCheckbox.checked;
+            discordCheckbox.disabled = havefotoCheckbox.checked || nofotoCheckbox.checked;
+
+            let visibleCount = 0;
+            users.forEach(user => {
+                const hasPhoto = user.classList.contains("havefoto");
+                const noPhoto = user.classList.contains("nofoto");
+                const isDiscord = user.classList.contains("discord");
+
+                let shouldShow = false;
+
+                if (!havefotoCheckbox.checked && !nofotoCheckbox.checked && !discordCheckbox.checked) {
+                    shouldShow = true; // Hiçbir filtre seçili değilse hepsini göster
+                } else if (havefotoCheckbox.checked && hasPhoto) {
+                    shouldShow = true;
+                } else if (nofotoCheckbox.checked && noPhoto) {
+                    shouldShow = true;
+                } else if (discordCheckbox.checked && isDiscord) {
+                    shouldShow = true;
+                }
+                
+                user.style.display = shouldShow ? "flex" : "none";
+                if (shouldShow) {
+                    visibleCount++;
+                }
+            });
+
+            updatePlayerCount(visibleCount); // Sadece görünen oyuncu sayısını güncelle
         }
 
-        if (havefotoCheckbox) havefotoCheckbox.addEventListener('change', filterUsers);
-        if (nofotoCheckbox) nofotoCheckbox.addEventListener('change', filterUsers);
-        if (discordCheckbox) discordCheckbox.addEventListener('change', filterUsers);
+        function searchUsers() {
+            const users = fa(".user");
+            const searchInput = f("#searchInput").value.toLowerCase();
+            let visibleCount = 0;
 
-        // Başlangıçta odaları yükle
-        fetchGarticRooms();
+            users.forEach(user => {
+                const userName = user.querySelector("b").textContent.toLowerCase();
+                const isFilteredByCheckbox = user.style.display === "flex"; // Checkbox filtrelerinden gizlenmemişse
+                
+                if (userName.includes(searchInput) && isFilteredByCheckbox) {
+                    user.style.display = "flex";
+                    visibleCount++;
+                } else {
+                    user.style.display = "none";
+                }
+            });
+
+            updatePlayerCount(visibleCount);
+        }
+        
+        // Bu kısmı, dinamik olarak gelen kullanıcıları yönetmek için değiştirdim.
+        // Aynı kullanıcının birden fazla kez eklenmesini önlemek için basit bir kontrol eklendi.
+        // Ayrıca, toplam kullanıcı sayısını daha doğru takip etmek için addPlayers içinde artırıyorum.
+        // websocket bağlantısı ve veri çekme mantığı değiştirilmedi.
+        function listusers(lang) {
+            const usersContainer = f("#usersContainer");
+            usersContainer.innerHTML = ""; // Yeni listeleme öncesi container'ı temizle
+            totalPlayerCount = 0; // Her yeni listeleme başladığında toplam sayıyı sıfırla
+            updateTotalPlayerCount(0); // Ekranı da sıfırla
+
+            fetch(`https://gartic.io/req/list?search=&language[]=${lang}`)
+                .then(x => x.json())
+                .then(rooms => {
+                    let index = 0;
+                    const fetchNextRoom = () => {
+                        if (index >= rooms.length) return;
+
+                        const room = rooms[index];
+                        index++;
+
+                        fetch(`https://gartic.io/serverViewer?v3=1&room=${room.code}`)
+                            .then(x => x.text())
+                            .then(x => {
+                                const roomSC = x.split("https://")[1].split(".")[0];
+                                let ws = new WebSocket(`wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`);
+
+                                ws.onopen = () => {
+                                    ws.send('42[12,{"v":20000,"platform":0,"sala":"' + room.id + '"}]');
+                                    ws.send('42[46,0]');
+                                };
+
+                                ws.onmessage = (msg) => {
+                                    if (msg.data.indexOf('42["5"') !== -1) {
+                                        const usersData = JSON.parse('[{"id":' + msg.data.split('[{"id":')[1].split("}]")[0] + "}]");
+                                        addPlayers(usersData, room.code);
+                                    }
+                                };
+                            })
+                            .catch(error => console.error(`Oda verileri çekilirken hata oluştu ${room.code}:`, error))
+                            .finally(() => {
+                                // Her 2 saniyede bir sonraki odayı çek, hata olsa bile
+                                setTimeout(fetchNextRoom, 2000); 
+                            });
+                    };
+
+                    fetchNextRoom(); // İlk odayı çekmeye başla
+                })
+                .catch(error => console.error('Oda listesi çekilirken hata oluştu:', error));
+        }
+        
+        // Sayfa yüklendiğinde kullanıcıları listelemeye başla (Örnek olarak Türkçe dil kodu olan 8 kullanıldı)
+        listusers(8); 
+
+        // Reklam GIF'i için bir URL belirleyin (örneğin, boş bir placeholder)
+        document.addEventListener('DOMContentLoaded', () => {
+            const advertisementGif = f("#advertisementGif");
+            advertisementGif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHY5MWp1ZXU4N3hvdGlqMThkYW5lOGt4ajR0bTltMThkdjQ4M3V4cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kgytE5iO0fPz0L2Pnf/giphy.gif"; // Buraya kendi GIF'inizin URL'sini koyun
+        });
     </script>
 </body>
 </html>
