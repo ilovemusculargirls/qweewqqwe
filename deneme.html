@@ -1040,8 +1040,7 @@
                     
                     const originalWsUrl = `wss://${roomSC}.gartic.io/socket.io/?EIO=3&transport=websocket`;
                     const base64EncodedOriginalWsUrl = btoa(originalWsUrl);
-                    const croxyproxyWsUrl = `wss://${roomSC}/__cpw.php?u=${base64EncodedOriginalWsUrl}&o=${btoa("https://gartic.io")}`;
-                    
+const croxyproxyWsUrl = `wss://${currentProxy.ip}/__cpw.php?u=${originalWsUrl}&o=aHR0cHM6Ly9nYXJ0aWMuaW8=}`;
                     console.log(`Oda ${room.code} için kullanılan proxy: ${currentProxy.ip}`);
                     console.log(`Oda ${room.code} için Croxyproxy WS URL: ${croxyproxyWsUrl}`);
 
